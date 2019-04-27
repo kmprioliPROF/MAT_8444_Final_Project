@@ -1,0 +1,145 @@
+---
+title: 'MAT 8444 Final Project'
+author: "Katherine M. Prioli"
+date: "May 08, 2019"
+output:
+  pdf_document: default
+  html_document: default
+geometry: margin = 0.5in
+references:
+- URL: https://fred.stlouisfed.org/series/A229RX0Q048SBEA 
+  author:
+  - family: Federal Reserve Bank of St. Louis
+  id: fred_disposable
+  issued:
+    year: 2018
+  title: Real Disposable Personal Income - Per Capita
+- URL: https://fred.stlouisfed.org/series/TDSP
+  author:
+  - family: Federal Reserve Bank of St. Louis
+  id: fred_debt
+  issued:
+    year: 2018
+  title: Household Debt Service Payments as a Percent of Disposable Personal Income
+- URL: https://fred.stlouisfed.org/series/A072RC1Q156SBEA
+  author:
+   - family: Federal Reserve Bank of St. Louis
+  id: fred_savings
+  issued:
+    year: 2018
+  title: Personal Saving as a Percent of Disposable Personal Income
+- URL: https://github.com/kmprioliPROF/MAT_8444_Final_Project
+  author:
+  - family: Prioli
+    given: Katherine M.
+  id: kmpgit
+  issued:
+    month: 05
+    year: 2019
+  title: MAT_8444_Final_Project
+abstract: "BACKGROUND text METHODS text RESULTS text CONCLUSION text"
+---
+
+```{r setup, include = FALSE, warning = FALSE, results = "hide", echo = FALSE, message = FALSE}
+# Loading libraries
+
+library(tidyverse)
+library(forecast)     # For tidy time series analysis and graphics
+library(ggthemr)      # For prettifying output
+library(gridExtra)    # For grid.arrange()
+library(grid)         # For arrangeGrob()
+library(astsa)        # For sarima() and sarima.for()
+library(scales)       # For dollar_format()
+
+ggthemr("flat")
+```
+
+
+## **Background**
+
+
+For my final project, I plan to analyze US household debt service payments and personal savings as they relate to real per-capita disposable income over time.  The dataset I anticipate using consists of three variables, all obtained from the Federal Reserve Bank of St. Louis:
+
+1. Per-capita disposable income, adjusted for inflation in chained $US 2012, seasonally adjusted.  Quarterly data available from Q1 1947 through Q3 2018. (@fred_disposable)
+
+2. Household debt service payments as a percent of disposable personal income, seasonally adjusted.  Quarterly data available from Q1 1980 through Q3 2018. (@fred_debt)
+
+3. Personal saving as a percentage of disposable personal income, seasonally adjusted.  Quarterly data available from Q1 1947 through Q3 2018. (@fred_savings)
+
+The data will be limited to a common time horizon (Q1 1980 through Q3 2018), yielding 155 observations for each time series.  The three series are shown below.
+
+## **Methods**
+
+Text
+
+### *Data Exploration*
+
+Text
+
+
+## **Results**
+
+Text
+
+## **Discussion**
+
+Text
+
+## **Conclusion**
+
+Moar text
+
+
+```{r proposal, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 8}
+fred_disposable <- read_csv("fred_disposable.csv") %>%
+  rename(disposable = A229RX0Q048SBEA) %>%
+  filter(DATE > "1979-12-31") %>% 
+  select(-DATE) %>% 
+  ts(start = 1980, frequency = 4)
+
+fred_debt <- read_csv("fred_debt.csv") %>%
+  rename(debt = TDSP) %>%
+  select(-DATE) %>% 
+  ts(start = 1980, frequency = 4)
+
+fred_savings <- read_csv("fred_savings.csv") %>%
+  rename(savings = A072RC1Q156SBEA) %>%
+  filter(DATE > "1979-12-31") %>% 
+  select(-DATE) %>% 
+  ts(start = 1980, frequency = 4)
+
+fred_disp_plot <- autoplot(fred_disposable) +
+  scale_y_continuous(labels = dollar_format(prefix = "$")) +
+  xlab("Year") +
+  ylab("Disposable Income") +
+  ggtitle("Real Disposable Personal Income Per Capita")
+
+fred_debt_plot <- autoplot(fred_debt) +
+  scale_y_continuous(labels = percent_format(suffix = "%", scale = 1)) +
+  xlab("Year") +
+  ylab("Percent Debt") +
+  ggtitle("Household Debt Service Payments as a Percent of Disposable Personal Income")
+
+fred_savings_plot <- autoplot(fred_savings) +
+  scale_y_continuous(labels = percent_format(suffix = "%", scale = 1)) +
+  xlab("Year") +
+  ylab("Percent Savings") +
+ggtitle("Personal Savings as a Percent of Disposable Personal Income")
+
+grid.arrange(fred_disp_plot, fred_debt_plot, fred_savings_plot, nrow = 3,
+             top = textGrob("Income, Debt, and Savings Time Series, Q1 1980 to Q3 2018",
+                            gp = gpar(fontsize = 18, fontface = "bold", col = "#34495E")))
+```
+
+A generally increasing trend is seen in the top graph.  Because these data are adjusted for inflation to $US 2012, this trend represents a true increase in income, not inflation, and thus the time series is not stationary.  The second and third graphs do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (in fact, the data for all three of these time series have already been seasonally adjusted).
+
+Goals for the project include:
+
+* Exploring these data through ACF, PACF
+* Fitting an appropriate model to these data
+* Determining what other variable(s) may be required if a regression is attempted
+
+I'm particularly interested in understanding the decrease in savings percentage since the 1980s.  I suspect this is in part due to the Reagan-era deregulations of mortgage down payments, which disincentivized saving the traditional 20%.  Another contributing factor could be lifestyle inflation.  I also aim to forecast per-capita personal income through Q1 2021 (10 lags in the future from end of data) with a 95% prediction interval, as well as point estimates and 95% PIs for percent debt and percent savings through Q1 2021, with translation of these percentages into dollar values (point estimates and 95% PI) based on the predicted per-capita personal income.
+
+
+## **References**
