@@ -8,7 +8,7 @@ output: html_document
   
 ## **Purpose**
   
-This repo contains the data, full source code, final report, and slides for my MAT 8444 final project.  The objective of this project was to **COMPLETE THIS**.
+This repo contains the data, full source code, final report, and slides for my MAT 8444 final project.  The objective of this project was to analyze US household debt service payments and personal savings as they relate to real per-capita disposable income over time.
 
 
 ## **Contents**

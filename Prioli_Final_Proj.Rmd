@@ -58,19 +58,22 @@ ggthemr("flat")
 ## **Background**
 
 
-For my final project, I plan to analyze US household debt service payments and personal savings as they relate to real per-capita disposable income over time.  The dataset I anticipate using consists of three variables, all obtained from the Federal Reserve Bank of St. Louis:
-
-1. Per-capita disposable income, adjusted for inflation in chained $US 2012, seasonally adjusted.  Quarterly data available from Q1 1947 through Q3 2018. (@fred_disposable)
-
-2. Household debt service payments as a percent of disposable personal income, seasonally adjusted.  Quarterly data available from Q1 1980 through Q3 2018. (@fred_debt)
-
-3. Personal saving as a percentage of disposable personal income, seasonally adjusted.  Quarterly data available from Q1 1947 through Q3 2018. (@fred_savings)
-
-The data will be limited to a common time horizon (Q1 1980 through Q3 2018), yielding 155 observations for each time series.  The three series are shown below.
+THe objective of this study was to analyze US household debt service payments and personal savings as they relate to real per-capita disposable income over time.
 
 ## **Methods**
 
 Text
+
+The analytic dataset consisted of three variables (Table 1).  All variables were obtained from the Federal Reserve Bank of St. Louis, all share a common year of valuation ($US 2012), and all have already been seasonally adjusted.
+
+
+| **Variable**      	| **Description**                                                                                 	| **Reference**    	|
+|-------------------	|-------------------------------------------------------------------------------------------------	|------------------	|
+| `fred_disposable` 	| Per-capita disposable income, adjusted for inflation in chained $US 2012, seasonally adjusted   	| @fred_disposable 	|
+| `fred_debt`       	| Household debt service payments as a percent of disposable personal income, seasonally adjusted 	| @fred_debt       	|
+| `fred_savings`    	| Personal saving as a percentage of disposable personal income, seasonally adjusted              	| @fred_savings    	|
+
+The data were be limited to a common time horizon (Q1 1980 through Q3 2018), yielding 155 observations for each time series.
 
 ### *Data Exploration*
 
@@ -81,6 +84,41 @@ Text
 
 Text
 
+### *Data Exploration*
+
+```{r wrangle, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 8}
+fred_disposable <- read_csv("data/fred_disposable.csv") %>%
+  rename(disposable = A229RX0Q048SBEA) %>%
+  filter(DATE > "1979-12-31") %>% 
+  select(-DATE) %>% 
+  ts(start = 1980, frequency = 4)
+
+fred_debt <- read_csv("data/fred_debt.csv") %>%
+  rename(debt = TDSP) %>%
+  select(-DATE) %>% 
+  ts(start = 1980, frequency = 4)
+
+fred_savings <- read_csv("data/fred_savings.csv") %>%
+  rename(savings = A072RC1Q156SBEA) %>%
+  filter(DATE > "1979-12-31") %>% 
+  select(-DATE) %>% 
+  ts(start = 1980, frequency = 4)
+```
+
+```{r exploration, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 8}
+fred_disp_plot <- ggtsdisplay(fred_disposable, points = FALSE,
+  main = "Figure 1.  Real Disposable Personal Income Per Capita")
+
+fred_debt_plot <- ggtsdisplay(fred_debt, points = FALSE,
+  main = "Figure 2.  Household Debt Service Payments as a Percent of Disposable Personal Income")
+
+fred_savings_plot <- ggtsdisplay(fred_savings, points = FALSE,
+  main = "Figure 3.  Personal Savings as a Percent of Disposable Personal Income")
+```
+
+A generally increasing trend was seen in the plot of disposable income.  Because these data are adjusted for inflation to $US 2012, this trend represents a true increase in disposable income, not inflation, and thus the time series is not stationary and will require differencing.  The ACF plot is suggestive of an AR(p) process.  The graphs of debt payments and savings do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (which is expected, because the data are provided in seasonally adjusted form).  Additionally, the ACF plots for debt payments and savings are suggestive of AR(p) processes due to their slow decline.  ARCH/GARCH behavior is also possible for each of these three TS, but the ACF plots for each of the squared time series (not shown here in the interest of brevity) did not meaningfully differ from the ACF plots of the raw TS.
+
+
 ## **Discussion**
 
 Text
@@ -90,48 +128,7 @@ Text
 Moar text
 
 
-```{r proposal, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 8}
-fred_disposable <- read_csv("fred_disposable.csv") %>%
-  rename(disposable = A229RX0Q048SBEA) %>%
-  filter(DATE > "1979-12-31") %>% 
-  select(-DATE) %>% 
-  ts(start = 1980, frequency = 4)
 
-fred_debt <- read_csv("fred_debt.csv") %>%
-  rename(debt = TDSP) %>%
-  select(-DATE) %>% 
-  ts(start = 1980, frequency = 4)
-
-fred_savings <- read_csv("fred_savings.csv") %>%
-  rename(savings = A072RC1Q156SBEA) %>%
-  filter(DATE > "1979-12-31") %>% 
-  select(-DATE) %>% 
-  ts(start = 1980, frequency = 4)
-
-fred_disp_plot <- autoplot(fred_disposable) +
-  scale_y_continuous(labels = dollar_format(prefix = "$")) +
-  xlab("Year") +
-  ylab("Disposable Income") +
-  ggtitle("Real Disposable Personal Income Per Capita")
-
-fred_debt_plot <- autoplot(fred_debt) +
-  scale_y_continuous(labels = percent_format(suffix = "%", scale = 1)) +
-  xlab("Year") +
-  ylab("Percent Debt") +
-  ggtitle("Household Debt Service Payments as a Percent of Disposable Personal Income")
-
-fred_savings_plot <- autoplot(fred_savings) +
-  scale_y_continuous(labels = percent_format(suffix = "%", scale = 1)) +
-  xlab("Year") +
-  ylab("Percent Savings") +
-ggtitle("Personal Savings as a Percent of Disposable Personal Income")
-
-grid.arrange(fred_disp_plot, fred_debt_plot, fred_savings_plot, nrow = 3,
-             top = textGrob("Income, Debt, and Savings Time Series, Q1 1980 to Q3 2018",
-                            gp = gpar(fontsize = 18, fontface = "bold", col = "#34495E")))
-```
-
-A generally increasing trend is seen in the top graph.  Because these data are adjusted for inflation to $US 2012, this trend represents a true increase in income, not inflation, and thus the time series is not stationary.  The second and third graphs do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (in fact, the data for all three of these time series have already been seasonally adjusted).
 
 Goals for the project include:
 
