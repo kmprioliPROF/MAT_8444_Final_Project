@@ -75,7 +75,7 @@ The data were be limited to a common time horizon (Q1 1980 through Q3 2018), yie
 
 ### *Data Exploration*
 
-Each TS was separately explored via the `forecast::autoplot()` function, which yields plots for the raw time series along with its ACF PACF.  Classical decomposition was performed for each TS via `decompose()` to understand 
+Each TS was separately explored via the `forecast::autoplot()` function, which yields plots for the raw time series along with its autocorrelation (ACF) and partial autocorrelation (PACF) functions.  Classical decomposition was performed for each TS via `decompose()` to understand the seasonality, if any, of these time series.  To understand how savings may be dependent on debt, the cross-correlation function (CCF) was computed and plotted for `fred_savings` vs. `fred_debt`.
 
 
 ## **Results**
@@ -136,7 +136,7 @@ fred_savings_plot <- ggtsdisplay(dsavings, points = FALSE, lag.max = 50,
   main = "Figure 6.  Personal Savings as a Percent of Disposable Personal Income, Differenced Once")
 ```
 
-Classical decomposition of each TS is shown in Figs. 7-9.  
+Classical decomposition of each TS is shown in Figs. 7-9.  For each TS, the seasonal component was small in magnitude when compared to the raw TS, with personal savings having the most pronounced seasonal component.
 
 ```{r decomposition, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 fred_disp_decompose <- decompose(fred_disposable) %>% 
@@ -152,12 +152,33 @@ fred_savings_decompose <- decompose(fred_savings) %>%
 fred_savings_decompose
 ```
 
+The cross-correlation function for savings vs. debt is shown in Fig. 10.  For the raw data, several negative values are seen for the CCF at lags $h = -1$ through $h = -18$, indicating that decreasing household debt may be a good predictor for increasing savings at these lags.  For the differenced data, there is a cross-correlation seen at lag $h = -1$; however, it is small in magnitude and thus differenced debt at $h = -1$ is not expected to be a good predictor of differenced savings.
+
+```{r ccf, , echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+dbt <- as.vector(fred_debt)
+sav <- as.vector(fred_savings)
+ddbt <- as.vector(ddebt)
+dsav <- as.vector(dsavings)
+ccf_raw <- ggCcf(x = dbt, y = sav) + ylim(-1, 1) + ggtitle("Savings vs. Debt")
+ccf_diff <- ggCcf(x = ddbt, y = dsav) + ylim(-1, 1) + 
+  ggtitle("Differenced Savings vs. Differenced Debt")
+grid.arrange(ccf_raw, ccf_diff, nrow = 1,
+             top = textGrob("Figure 10.  Cross-Correlation Function",
+                            gp = gpar(fontsize = 16, fontface = "bold", col = "#34495E"),
+                            x = 0.025, hjust = 0))
+```
 
 
 
 ## **Discussion**
 
 Text
+
+
+### *Limitations*
+
+
+
 
 ## **Conclusion**
 
