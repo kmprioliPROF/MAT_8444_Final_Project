@@ -62,9 +62,7 @@ THe objective of this study was to analyze US household debt service payments an
 
 ## **Methods**
 
-Text
-
-The analytic dataset consisted of three variables (Table 1).  All variables were obtained from the Federal Reserve Bank of St. Louis, all share a common year of valuation ($US 2012), and all have already been seasonally adjusted.
+The analytic dataset consisted of three time series (TS) variables (Table 1).  All variables were obtained from the Federal Reserve Bank of St. Louis, all share a common year of valuation ($US 2012), and all have already been seasonally adjusted.
 
 
 | **Variable**      	| **Description**                                                                                 	| **Reference**    	|
@@ -73,11 +71,11 @@ The analytic dataset consisted of three variables (Table 1).  All variables were
 | `fred_debt`       	| Household debt service payments as a percent of disposable personal income, seasonally adjusted 	| @fred_debt       	|
 | `fred_savings`    	| Personal saving as a percentage of disposable personal income, seasonally adjusted              	| @fred_savings    	|
 
-The data were be limited to a common time horizon (Q1 1980 through Q3 2018), yielding 155 observations for each time series.
+The data were be limited to a common time horizon (Q1 1980 through Q3 2018), yielding 155 observations for each TS.
 
 ### *Data Exploration*
 
-Text
+Each TS was separately explored via the `forecast::autoplot()` function, which yields plots for the raw time series along with its ACF PACF.  Classical decomposition was performed for each TS via `decompose()` to understand 
 
 
 ## **Results**
@@ -105,18 +103,56 @@ fred_savings <- read_csv("data/fred_savings.csv") %>%
   ts(start = 1980, frequency = 4)
 ```
 
-```{r exploration, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 8}
-fred_disp_plot <- ggtsdisplay(fred_disposable, points = FALSE,
+Figures 1-3 show the `autoplot()` output for the three time series.  A generally increasing trend is seen in the plot of disposable income (Fig. 1).  Because these data are adjusted for inflation to \$US 2012, this trend represents a true increase in disposable income, not inflation, and thus the time series is not stationary and will require differencing.  The ACF plot shows a slow linear decline in $\hat{\rho}(h)$ with increasing *h*, suggesting nonstationarity.  The graphs of debt payments and savings (Figs. 2 and 3 respectively) do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (which is expected, because the data are provided in seasonally adjusted form).  Additionally, the ACF plots for both debt payments and savings are suggestive of nonstationarity due to their slow decline.
+
+<!-- ARCH/GARCH behavior is also possible for each of these three TS, but the ACF plots for each of the squared time series (not shown here in the interest of brevity) did not meaningfully differ from the ACF plots of the raw TS. -->
+
+```{r exploration, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+fred_disp_plot <- ggtsdisplay(fred_disposable, points = FALSE, lag.max = 50,
   main = "Figure 1.  Real Disposable Personal Income Per Capita")
 
-fred_debt_plot <- ggtsdisplay(fred_debt, points = FALSE,
+fred_debt_plot <- ggtsdisplay(fred_debt, points = FALSE, lag.max = 50,
   main = "Figure 2.  Household Debt Service Payments as a Percent of Disposable Personal Income")
 
-fred_savings_plot <- ggtsdisplay(fred_savings, points = FALSE,
+fred_savings_plot <- ggtsdisplay(fred_savings, points = FALSE, lag.max = 50,
   main = "Figure 3.  Personal Savings as a Percent of Disposable Personal Income")
 ```
 
-A generally increasing trend was seen in the plot of disposable income.  Because these data are adjusted for inflation to $US 2012, this trend represents a true increase in disposable income, not inflation, and thus the time series is not stationary and will require differencing.  The ACF plot is suggestive of an AR(p) process.  The graphs of debt payments and savings do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (which is expected, because the data are provided in seasonally adjusted form).  Additionally, the ACF plots for debt payments and savings are suggestive of AR(p) processes due to their slow decline.  ARCH/GARCH behavior is also possible for each of these three TS, but the ACF plots for each of the squared time series (not shown here in the interest of brevity) did not meaningfully differ from the ACF plots of the raw TS.
+Figures 4-6 show the results of differencing.  After differencing, COMPLETE THIS
+
+```{r exploration, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+ddisp <- diff(fred_disposable)
+ddebt <- diff(fred_debt)
+dsavings <- diff(fred_savings)
+
+fred_disp_plot <- ggtsdisplay(ddisp, points = FALSE, lag.max = 50,
+  main = "Figure 4.  Real Disposable Personal Income Per Capita, Differenced Once")
+
+fred_debt_plot <- ggtsdisplay(ddebt, points = FALSE, lag.max = 50,
+  main = "Figure 5.  Household Debt Service Payments as a Percent of Disposable Personal Income, 
+  Differenced Once")
+
+fred_savings_plot <- ggtsdisplay(dsavings, points = FALSE, lag.max = 50,
+  main = "Figure 6.  Personal Savings as a Percent of Disposable Personal Income, Differenced Once")
+```
+
+Classical decomposition of each TS is shown in Figs. 7-9.  
+
+```{r decomposition, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+fred_disp_decompose <- decompose(fred_disposable) %>% 
+  autoplot(main = "Figure 7.  Disposable Personal Income, Decomposition")
+fred_disp_decompose
+
+fred_debt_decompose <- decompose(fred_debt) %>% 
+  autoplot(main = "Figure 8.  Debt Service Payments, Decomposition")
+fred_debt_decompose
+
+fred_savings_decompose <- decompose(fred_savings) %>% 
+  autoplot(main = "Figure 9.  Personal Savings, Decomposition")
+fred_savings_decompose
+```
+
+
 
 
 ## **Discussion**
