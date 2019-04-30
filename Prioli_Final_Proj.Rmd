@@ -100,7 +100,7 @@ Each TS was separately explored via the `forecast::autoplot()` function, which y
 For each TS, the model suggested by `forecast::auto.arima()` was fit using `forecast::Arima()`, and model fit was assesed through analysis of residuals using `forecast::checkresiduals()`.
 
 
-All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Computing, Vienna, Austria) using packages `forecast` (@pkg_forecast) and `astsa` (@pkg_astsa) for specialized time series calculations and plots.
+All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Computing, Vienna, Austria) using packages `forecast` (@pkg_forecast) and `astsa` (@pkg_astsa) for specialized time series calculations and plots.  All statistical tests were evaluated against a significance threshold of $\alpha = 0.05$.
 
 ## **Results**
 
@@ -198,58 +198,44 @@ grid.arrange(ccf_raw, ccf_diff, nrow = 1,
 aarima_disp <- auto.arima(fred_disposable)
 ```
 
-For disposable income, the model suggested by `auto.arima()` was ARIMA $(2,1,0) \times (0,0,1)_{4}$; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yields a *p*-value of 0.8403 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates good approximate normality of residuals.
+For disposable income, the model suggested by `auto.arima()` was ARIMA $(2,1,0) \times (0,0,1)_{4}$; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yielded a *p*-value of 0.8403 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates good approximate normality of residuals.  This model fits the data reasonably well.
 
 ```{r sarima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 disp_fit <- Arima(fred_disposable, order = c(2,1,0), seasonal = c(0,0,1), include.drift = TRUE)
-disp_fit
+#disp_fit
 
 checkresiduals(disp_fit, points = FALSE)
 ```
 
+```{r autoarima_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+aarima_debt <- auto.arima(fred_debt)
+aarima_debt
+```
 
-<!-- ```{r sarima_seas, warning = FALSE, fig.width = 10, fig.height = 8} -->
-<!-- uplim <- 5 -->
+For debt, `auto.arima()` suggested ARIMA $(1,1,2) \times (1,0,1)_{4}$.  Output from `checkresiduals()` for the fitted model is shown in Fig. 12.  The Ljung-Box test was nonsignificant at $p = 0.3764$ over 8 lags; additionally, the ACF plot has the appearance of white noise and the histogram shows that residuals are approximately normally distributed.  Thus this model fits well.
 
-<!-- seas_aic_out <- matrix(double((uplim + 1)^2), nrow = uplim + 1, ncol = uplim + 1) -->
-<!-- rownames(seas_aic_out) <- paste0("P_", c(0:(uplim))) -->
-<!-- colnames(seas_aic_out) <- paste0("Q_", c(0:(uplim))) -->
-<!-- seas_aic_out <- as.data.frame(seas_aic_out) -->
+```{r sarima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+debt_fit <- Arima(fred_debt, order = c(1,1,2), seasonal = c(1,0,1), include.drift = FALSE)
+debt_fit
 
-<!-- for(P in 0:uplim){ -->
-<!--   for(Q in 0:uplim){ -->
-<!--     seas_aic_out[P+1, Q+1] <- sarima(fred_disposable, -->
-<!--                                      p = 0, d = 0, q = 0, -->
-<!--                                      P = P, D = 1, Q = Q, -->
-<!--                                      S = 4, details = FALSE)$AICc -->
-<!--   } -->
-<!-- } -->
+checkresiduals(debt_fit, points = FALSE)
+```
 
-<!-- seas_aic_out -->
-<!-- ``` -->
+```{r autoarima_savings, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+aarima_savings <- auto.arima(fred_savings)
+aarima_savings
+```
 
-<!-- ```{r, warning = FALSE, fig.width = 10, fig.height = 8} -->
-<!-- uplim <- 5 -->
+For savings, `auto.arima()` suggested ARMA $(1,1,0)$, with no seasonal component.  The `checkresiduals()` output is presented in Fig. 13.  The Ljung-Box test was once again nonsignificant at $p = 0.5447$ over 8 lags, the ACF plot of residuals is consistent with white noise, and the histogram shows good approximate normality of residuals; thus, the model fits well.
 
-<!-- aic_out <- matrix(double((uplim + 1)^2), nrow = uplim + 1, ncol = uplim + 1) -->
-<!-- rownames(aic_out) <- paste0("p_", c(0:(uplim))) -->
-<!-- colnames(aic_out) <- paste0("q_", c(0:(uplim))) -->
-<!-- aic_out <- as.data.frame(aic_out) -->
+```{r sarima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+savings_fit <- Arima(fred_savings, order = c(1,1,0), include.drift = FALSE)
+savings_fit
 
-<!-- for(p in 0:uplim){ -->
-<!--   for(q in 0:uplim){ -->
-<!--     aic_out[p+1, q+1] <- sarima(fred_disposable,  -->
-<!--                                 p = p, d = 1, q = q,  -->
-<!--                                 P = 4, D = 1, Q = 5, -->
-<!--                                 S = 4, details = FALSE)$AICc -->
-<!--   } -->
-<!-- } -->
+checkresiduals(savings_fit, points = FALSE)
+```
 
-<!-- aic_out -->
 
-<!-- # Finding best model based on minimizing AICc -->
-<!-- which(aic_out == min(aic_out)) -->
-<!-- ``` -->
 
 
 
