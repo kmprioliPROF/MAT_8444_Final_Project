@@ -37,6 +37,24 @@ references:
     month: 05
     year: 2019
   title: MAT_8444_Final_Project
+- URL: http://www.jstatsoft.org/article/view/v027i03
+  author: 
+  - family: Hyndman
+    given: Rob
+  - family: Khandakar
+    given: Yeasmin
+  id: pkg_forecast
+  issued: 
+    year: 2008
+  title: Automatic time series forecasting\: the forecast package for R
+- URL: https://github.com/nickpoison/astsa
+  author: 
+  - family: Stoffer
+    given: David
+  id: pkg_astsa
+  issued: 
+    year: 2019
+  title: astsa\: Applied Statistical Time Series Analysis
 abstract: "BACKGROUND text METHODS text RESULTS text CONCLUSION text"
 ---
 
@@ -77,6 +95,12 @@ The data were be limited to a common time horizon (Q1 1980 through Q3 2018), yie
 
 Each TS was separately explored via the `forecast::autoplot()` function, which yields plots for the raw time series along with its autocorrelation (ACF) and partial autocorrelation (PACF) functions.  Classical decomposition was performed for each TS via `decompose()` to understand the seasonality, if any, of these time series.  To understand how savings may be dependent on debt, the cross-correlation function (CCF) was computed and plotted for `fred_savings` vs. `fred_debt`.
 
+### *Modeling the Time Series*
+
+For each TS, the model suggested by `forecast::auto.arima()` was fit using `forecast::Arima()`, and model fit was assesed through analysis of residuals using `forecast::checkresiduals()`.
+
+
+All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Computing, Vienna, Austria) using packages `forecast` (@pkg_forecast) and `astsa` (@pkg_astsa) for specialized time series calculations and plots.
 
 ## **Results**
 
@@ -154,7 +178,7 @@ fred_savings_decompose
 
 The cross-correlation function for savings vs. debt is shown in Fig. 10.  For the raw data, several negative values are seen for the CCF at lags $h = -1$ through $h = -18$, indicating that decreasing household debt may be a good predictor for increasing savings at these lags.  For the differenced data, there is a cross-correlation seen at lag $h = -1$; however, it is small in magnitude and thus differenced debt at $h = -1$ is not expected to be a good predictor of differenced savings.
 
-```{r ccf, , echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+```{r ccf, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 dbt <- as.vector(fred_debt)
 sav <- as.vector(fred_savings)
 ddbt <- as.vector(ddebt)
@@ -167,6 +191,65 @@ grid.arrange(ccf_raw, ccf_diff, nrow = 1,
                             gp = gpar(fontsize = 16, fontface = "bold", col = "#34495E"),
                             x = 0.025, hjust = 0))
 ```
+
+### *Modeling the Time Series*
+
+```{r autoarima_disposable, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+aarima_disp <- auto.arima(fred_disposable)
+```
+
+For disposable income, the model suggested by `auto.arima()` was ARIMA $(2,1,0) \times (0,0,1)_{4}$; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yields a *p*-value of 0.8403 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates good approximate normality of residuals.
+
+```{r sarima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+disp_fit <- Arima(fred_disposable, order = c(2,1,0), seasonal = c(0,0,1), include.drift = TRUE)
+disp_fit
+
+checkresiduals(disp_fit, points = FALSE)
+```
+
+
+<!-- ```{r sarima_seas, warning = FALSE, fig.width = 10, fig.height = 8} -->
+<!-- uplim <- 5 -->
+
+<!-- seas_aic_out <- matrix(double((uplim + 1)^2), nrow = uplim + 1, ncol = uplim + 1) -->
+<!-- rownames(seas_aic_out) <- paste0("P_", c(0:(uplim))) -->
+<!-- colnames(seas_aic_out) <- paste0("Q_", c(0:(uplim))) -->
+<!-- seas_aic_out <- as.data.frame(seas_aic_out) -->
+
+<!-- for(P in 0:uplim){ -->
+<!--   for(Q in 0:uplim){ -->
+<!--     seas_aic_out[P+1, Q+1] <- sarima(fred_disposable, -->
+<!--                                      p = 0, d = 0, q = 0, -->
+<!--                                      P = P, D = 1, Q = Q, -->
+<!--                                      S = 4, details = FALSE)$AICc -->
+<!--   } -->
+<!-- } -->
+
+<!-- seas_aic_out -->
+<!-- ``` -->
+
+<!-- ```{r, warning = FALSE, fig.width = 10, fig.height = 8} -->
+<!-- uplim <- 5 -->
+
+<!-- aic_out <- matrix(double((uplim + 1)^2), nrow = uplim + 1, ncol = uplim + 1) -->
+<!-- rownames(aic_out) <- paste0("p_", c(0:(uplim))) -->
+<!-- colnames(aic_out) <- paste0("q_", c(0:(uplim))) -->
+<!-- aic_out <- as.data.frame(aic_out) -->
+
+<!-- for(p in 0:uplim){ -->
+<!--   for(q in 0:uplim){ -->
+<!--     aic_out[p+1, q+1] <- sarima(fred_disposable,  -->
+<!--                                 p = p, d = 1, q = q,  -->
+<!--                                 P = 4, D = 1, Q = 5, -->
+<!--                                 S = 4, details = FALSE)$AICc -->
+<!--   } -->
+<!-- } -->
+
+<!-- aic_out -->
+
+<!-- # Finding best model based on minimizing AICc -->
+<!-- which(aic_out == min(aic_out)) -->
+<!-- ``` -->
 
 
 
