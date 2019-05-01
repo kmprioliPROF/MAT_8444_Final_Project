@@ -1,7 +1,7 @@
 ---
 title: 'MAT 8444 Final Project'
 author: "Katherine M. Prioli"
-date: "May 08, 2019"
+date: "May 10, 2019"
 output:
   pdf_document: default
   html_document: default
@@ -62,7 +62,7 @@ references:
   id: pkg_forecast
   issued: 
     year: 2019
-  title: forecast\: Forecasting functions for time series and linear models.  R package version 8.5.
+  title: forecast - Forecasting functions for time series and linear models.  R package version 8.5.
 - URL: https://github.com/nickpoison/astsa
   author: 
   - family: Stoffer
@@ -70,7 +70,7 @@ references:
   id: pkg_astsa
   issued: 
     year: 2019
-  title: astsa\: Applied Statistical Time Series Analysis
+  title: astsa - Applied Statistical Time Series Analysis
 abstract: "BACKGROUND text METHODS text RESULTS text CONCLUSION text"
 ---
 
@@ -105,7 +105,7 @@ The analytic dataset consisted of three time series (TS) variables (Table 1).  A
 | `fred_debt`       	| Household debt service payments as a percent of disposable personal income, seasonally adjusted 	| @fred_debt       	|
 | `fred_savings`    	| Personal saving as a percentage of disposable personal income, seasonally adjusted              	| @fred_savings    	|
 
-The data were be limited to a common time horizon (Q1 1980 through Q3 2018), yielding 155 observations for each TS.
+The data were limited to a common time horizon (Q1 1980 through Q3 2018), yielding 155 observations for each TS.
 
 ### *Data Exploration*
 
@@ -131,7 +131,7 @@ fred_disposable <- read_csv("data/fred_disposable.csv") %>%
   select(-DATE) %>% 
   ts(start = 1980, frequency = 4)
 
-fred_debt_train <- read_csv("data/fred_debt.csv") %>%
+fred_debt <- read_csv("data/fred_debt.csv") %>%
   rename(debt = TDSP) %>%
   select(-DATE) %>% 
   ts(start = 1980, frequency = 4)
@@ -178,7 +178,7 @@ fred_savings_plot <- ggtsdisplay(fred_savings, points = FALSE, lag.max = 50,
 
 Figures 4-6 show the results of differencing.  After differencing, stationarity appears to be met for all three TS.  ELABORATE FURTHER?
 
-```{r exploration, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+```{r exploration_diff, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 ddisp <- diff(fred_disposable)
 ddebt <- diff(fred_debt)
 dsavings <- diff(fred_savings)
