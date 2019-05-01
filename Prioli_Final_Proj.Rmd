@@ -243,13 +243,31 @@ checkresiduals(disp_fit, points = FALSE)
 ```
 
 ```{r forecast_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-disp_forecast <- disp_fit %>% 
-  forecast(h = 3, level = 95) %>% 
+disp_forecast_plot <- disp_fit %>% 
+  forecast(h = 3, level = 95) %>%
   autoplot() + 
   xlab("Year") +
   ylab("") +
-  ggtitle("TEST")
-disp_forecast
+  ggtitle("Figure 12.  Predicted vs. Actual Values, Disposable Income")
+disp_forecast_plot
+
+
+#### CONTINUE HERE ----
+
+# Next task is to create dataframes for train + prediction vs total
+# Then plot together via ggplot2
+# and pipe in autoplot() output for CI
+
+# disp_forecast <- disp_fit %>% 
+#   forecast(h = 3, level = 95)
+# 
+# disp_preds <- disp_forecast$mean %>% ts(start = 2018, frequency = 4)
+# 
+# disp_pred_plot <- ggplot() +
+#   geom_line(data = fred_disposable, aes(x = ))
+
+
+
 ```
 
 
@@ -258,7 +276,7 @@ aarima_debt <- auto.arima(fred_debt_train)
 #aarima_debt
 ```
 
-For debt, `auto.arima()` suggested ARIMA $(1, 1, 2) \times (1, 0, 1)_{4}$.  Output from `checkresiduals()` for the fitted model is shown in Fig. 12.  The Ljung-Box test was nonsignificant at $p = 0.4033$ over 8 lags; additionally, the ACF plot has the appearance of white noise and the histogram shows that residuals are approximately normally distributed.  Thus this model fits well.
+For debt, `auto.arima()` suggested ARIMA $(1, 1, 2) \times (1, 0, 1)_{4}$.  Output from `checkresiduals()` for the fitted model is shown in Fig. 13.  The Ljung-Box test was nonsignificant at $p = 0.4033$ over 8 lags; additionally, the ACF plot has the appearance of white noise and the histogram shows that residuals are approximately normally distributed.  Thus this model fits well.
 
 ```{r Arima_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 debt_fit <- Arima(fred_debt_train, order = c(1, 1, 2), seasonal = c(1, 0, 1), include.drift = FALSE)
@@ -272,7 +290,7 @@ aarima_savings <- auto.arima(fred_savings_train)
 #aarima_savings
 ```
 
-For savings, `auto.arima()` suggested ARMA $(1, 1, 0) \times (0, 0, 1)_{4}$, with no seasonal component.  The `checkresiduals()` output is presented in Fig. 13.  The Ljung-Box test was once again nonsignificant at $p = 0.8278$ over 8 lags, the ACF plot of residuals is consistent with white noise, and the histogram shows general normality of residuals with some deviation about the tails; thus, the model fits well.
+For savings, `auto.arima()` suggested ARMA $(1, 1, 0) \times (0, 0, 1)_{4}$, with no seasonal component.  The `checkresiduals()` output is presented in Fig. 14.  The Ljung-Box test was once again nonsignificant at $p = 0.8278$ over 8 lags, the ACF plot of residuals is consistent with white noise, and the histogram shows general normality of residuals with some deviation about the tails; thus, the model fits well.
 
 ```{r Arima_savings, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 savings_fit <- Arima(fred_savings_train, order = c(1, 1, 0), seasonal = c(0, 0, 1), include.drift = FALSE)
