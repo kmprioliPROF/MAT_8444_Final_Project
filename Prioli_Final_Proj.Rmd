@@ -37,16 +37,32 @@ references:
     month: 05
     year: 2019
   title: MAT_8444_Final_Project
-- URL: http://www.jstatsoft.org/article/view/v027i03
+- URL: http://pkg.robjhyndman.com/forecast
   author: 
   - family: Hyndman
-    given: Rob
-  - family: Khandakar
-    given: Yeasmin
+    given: R
+  - family: Athanasopoulos
+    given: G
+  - family: Bergmeir
+    given: C
+  - family: Caceres
+    given: G
+  - family: Chhay
+    given: L
+  - family: O'Hara-Wild
+    given: M
+  - family: Petropoulos
+    given: F
+  - family: Razbash
+    given: S
+  - family: Wang
+    given: E
+  - family: Yasmeen
+    given: F
   id: pkg_forecast
   issued: 
-    year: 2008
-  title: Automatic time series forecasting\: the forecast package for R
+    year: 2019
+  title: forecast\: Forecasting functions for time series and linear models.  R package version 8.5.
 - URL: https://github.com/nickpoison/astsa
   author: 
   - family: Stoffer
@@ -95,9 +111,9 @@ The data were be limited to a common time horizon (Q1 1980 through Q3 2018), yie
 
 Each TS was separately explored via the `forecast::autoplot()` function, which yields plots for the raw time series along with its autocorrelation (ACF) and partial autocorrelation (PACF) functions.  Classical decomposition was performed for each TS via `decompose()` to understand the seasonality, if any, of these time series.  To understand how savings may be dependent on debt, the cross-correlation function (CCF) was computed and plotted for `fred_savings` vs. `fred_debt`.
 
-### *Modeling the Time Series*
+### *Modeling and Predictions*
 
-For each TS, the model suggested by `forecast::auto.arima()` was fit using `forecast::Arima()`, and model fit was assesed through analysis of residuals using `forecast::checkresiduals()`.
+To model the data, each TS was subset to a "training" dataset capped at Q3 2017, and was then passed into `forecast::auto.arima()`.  The model suggested by `auto,arima()` was fit using `forecast::Arima()`, and model fit was assesed through analysis of residuals using `forecast::checkresiduals()`.  Finally, `forecast::forecast()` was used to predict the next three values for each TS (i.e., Q1 2018 through Q3 2018) and these predictions were compared to the values found in the full datasets.
 
 
 All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Computing, Vienna, Austria) using packages `forecast` (@pkg_forecast) and `astsa` (@pkg_astsa) for specialized time series calculations and plots.  All statistical tests were evaluated against a significance threshold of $\alpha = 0.05$.
@@ -115,7 +131,7 @@ fred_disposable <- read_csv("data/fred_disposable.csv") %>%
   select(-DATE) %>% 
   ts(start = 1980, frequency = 4)
 
-fred_debt <- read_csv("data/fred_debt.csv") %>%
+fred_debt_train <- read_csv("data/fred_debt.csv") %>%
   rename(debt = TDSP) %>%
   select(-DATE) %>% 
   ts(start = 1980, frequency = 4)
@@ -123,6 +139,24 @@ fred_debt <- read_csv("data/fred_debt.csv") %>%
 fred_savings <- read_csv("data/fred_savings.csv") %>%
   rename(savings = A072RC1Q156SBEA) %>%
   filter(DATE > "1979-12-31") %>% 
+  select(-DATE) %>% 
+  ts(start = 1980, frequency = 4)
+
+fred_disposable_train <- read_csv("data/fred_disposable.csv") %>%
+  rename(disposable = A229RX0Q048SBEA) %>%
+  filter(DATE > "1979-12-31" & DATE < "2018-01-01") %>% 
+  select(-DATE) %>% 
+  ts(start = 1980, frequency = 4)
+
+fred_debt_train <- read_csv("data/fred_debt.csv") %>%
+  rename(debt = TDSP) %>%
+  filter(DATE > "1979-12-31" & DATE < "2018-01-01") %>% 
+  select(-DATE) %>% 
+  ts(start = 1980, frequency = 4)
+
+fred_savings_train <- read_csv("data/fred_savings.csv") %>%
+  rename(savings = A072RC1Q156SBEA) %>%
+  filter(DATE > "1979-12-31" & DATE < "2018-01-01") %>% 
   select(-DATE) %>% 
   ts(start = 1980, frequency = 4)
 ```
@@ -142,7 +176,7 @@ fred_savings_plot <- ggtsdisplay(fred_savings, points = FALSE, lag.max = 50,
   main = "Figure 3.  Personal Savings as a Percent of Disposable Personal Income")
 ```
 
-Figures 4-6 show the results of differencing.  After differencing, COMPLETE THIS
+Figures 4-6 show the results of differencing.  After differencing, stationarity appears to be met for all three TS.  ELABORATE FURTHER?
 
 ```{r exploration, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 ddisp <- diff(fred_disposable)
@@ -153,8 +187,7 @@ fred_disp_plot <- ggtsdisplay(ddisp, points = FALSE, lag.max = 50,
   main = "Figure 4.  Real Disposable Personal Income Per Capita, Differenced Once")
 
 fred_debt_plot <- ggtsdisplay(ddebt, points = FALSE, lag.max = 50,
-  main = "Figure 5.  Household Debt Service Payments as a Percent of Disposable Personal Income, 
-  Differenced Once")
+  main = "Figure 5.  Household Debt Service Payments as a Percent of Disposable Personal Income, \nDifferenced Once")
 
 fred_savings_plot <- ggtsdisplay(dsavings, points = FALSE, lag.max = 50,
   main = "Figure 6.  Personal Savings as a Percent of Disposable Personal Income, Differenced Once")
@@ -192,44 +225,57 @@ grid.arrange(ccf_raw, ccf_diff, nrow = 1,
                             x = 0.025, hjust = 0))
 ```
 
-### *Modeling the Time Series*
+### *Modeling and Predictions*
 
 ```{r autoarima_disposable, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-aarima_disp <- auto.arima(fred_disposable)
+aarima_disp <- auto.arima(fred_disposable_train)
+#aarima_disp
 ```
 
-For disposable income, the model suggested by `auto.arima()` was ARIMA $(2,1,0) \times (0,0,1)_{4}$; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yielded a *p*-value of 0.8403 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates good approximate normality of residuals.  This model fits the data reasonably well.
+For disposable income, the model suggested by `auto.arima()` was ARIMA $(1, 1, 0)$ with drift; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yielded a *p*-value of 0.3746 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates approximate normality of residuals with some deviation about the tails.  This model fits the training dataset reasonably well.
 
-```{r sarima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
-disp_fit <- Arima(fred_disposable, order = c(2,1,0), seasonal = c(0,0,1), include.drift = TRUE)
-#disp_fit
+```{r Arima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+#disp_fit <- Arima(fred_disposable, order = c(2, 1, 0), seasonal = c(0, 0, 1), include.drift = TRUE)
+disp_fit <- Arima(fred_disposable_train, order = c(1, 1, 0), include.drift = TRUE)
+disp_fit
 
 checkresiduals(disp_fit, points = FALSE)
 ```
 
-```{r autoarima_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-aarima_debt <- auto.arima(fred_debt)
-aarima_debt
+```{r forecast_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+disp_forecast <- disp_fit %>% 
+  forecast(h = 3, level = 95) %>% 
+  autoplot() + 
+  xlab("Year") +
+  ylab("") +
+  ggtitle("TEST")
+disp_forecast
 ```
 
-For debt, `auto.arima()` suggested ARIMA $(1,1,2) \times (1,0,1)_{4}$.  Output from `checkresiduals()` for the fitted model is shown in Fig. 12.  The Ljung-Box test was nonsignificant at $p = 0.3764$ over 8 lags; additionally, the ACF plot has the appearance of white noise and the histogram shows that residuals are approximately normally distributed.  Thus this model fits well.
 
-```{r sarima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
-debt_fit <- Arima(fred_debt, order = c(1,1,2), seasonal = c(1,0,1), include.drift = FALSE)
+```{r autoarima_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+aarima_debt <- auto.arima(fred_debt_train)
+#aarima_debt
+```
+
+For debt, `auto.arima()` suggested ARIMA $(1, 1, 2) \times (1, 0, 1)_{4}$.  Output from `checkresiduals()` for the fitted model is shown in Fig. 12.  The Ljung-Box test was nonsignificant at $p = 0.4033$ over 8 lags; additionally, the ACF plot has the appearance of white noise and the histogram shows that residuals are approximately normally distributed.  Thus this model fits well.
+
+```{r Arima_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+debt_fit <- Arima(fred_debt_train, order = c(1, 1, 2), seasonal = c(1, 0, 1), include.drift = FALSE)
 debt_fit
 
 checkresiduals(debt_fit, points = FALSE)
 ```
 
 ```{r autoarima_savings, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-aarima_savings <- auto.arima(fred_savings)
-aarima_savings
+aarima_savings <- auto.arima(fred_savings_train)
+#aarima_savings
 ```
 
-For savings, `auto.arima()` suggested ARMA $(1,1,0)$, with no seasonal component.  The `checkresiduals()` output is presented in Fig. 13.  The Ljung-Box test was once again nonsignificant at $p = 0.5447$ over 8 lags, the ACF plot of residuals is consistent with white noise, and the histogram shows good approximate normality of residuals; thus, the model fits well.
+For savings, `auto.arima()` suggested ARMA $(1, 1, 0) \times (0, 0, 1)_{4}$, with no seasonal component.  The `checkresiduals()` output is presented in Fig. 13.  The Ljung-Box test was once again nonsignificant at $p = 0.8278$ over 8 lags, the ACF plot of residuals is consistent with white noise, and the histogram shows general normality of residuals with some deviation about the tails; thus, the model fits well.
 
-```{r sarima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
-savings_fit <- Arima(fred_savings, order = c(1,1,0), include.drift = FALSE)
+```{r Arima_savings, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
+savings_fit <- Arima(fred_savings_train, order = c(1, 1, 0), seasonal = c(0, 0, 1), include.drift = FALSE)
 savings_fit
 
 checkresiduals(savings_fit, points = FALSE)
@@ -246,23 +292,13 @@ Text
 
 ### *Limitations*
 
-
+Text
 
 
 ## **Conclusion**
 
-Moar text
+Text
 
-
-
-
-Goals for the project include:
-
-* Exploring these data through ACF, PACF
-* Fitting an appropriate model to these data
-* Determining what other variable(s) may be required if a regression is attempted
-
-I'm particularly interested in understanding the decrease in savings percentage since the 1980s.  I suspect this is in part due to the Reagan-era deregulations of mortgage down payments, which disincentivized saving the traditional 20%.  Another contributing factor could be lifestyle inflation.  I also aim to forecast per-capita personal income through Q1 2021 (10 lags in the future from end of data) with a 95% prediction interval, as well as point estimates and 95% PIs for percent debt and percent savings through Q1 2021, with translation of these percentages into dollar values (point estimates and 95% PI) based on the predicted per-capita personal income.
 
 
 ## **References**
