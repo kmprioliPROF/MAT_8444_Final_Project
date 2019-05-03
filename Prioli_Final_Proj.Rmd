@@ -78,13 +78,16 @@ abstract: "BACKGROUND text METHODS text RESULTS text CONCLUSION text"
 # Loading libraries
 
 library(tidyverse)
-library(forecast)     # For tidy time series analysis and graphics
-library(lmtest)       # For getting p-values for Arima() output 
-library(ggthemr)      # For prettifying output
-library(gridExtra)    # For grid.arrange()
-library(grid)         # For arrangeGrob()
-library(astsa)        # For sarima() and sarima.for()
-library(scales)       # For dollar_format()
+library(forecast)      # For tidy time series analysis and graphics
+library(lmtest)        # For getting p-values for Arima() output 
+library(ggthemr)       # For prettifying output
+library(gridExtra)     # For grid.arrange()
+library(grid)          # For arrangeGrob()
+library(scales)        # For dollar_format()
+library(kableExtra)    # For kable()
+library(formattable)   # For currency() formatting
+
+library(astsa)         # For sarima() and sarima.for()
 
 
 ggthemr("flat")
@@ -100,6 +103,7 @@ The objective of this study was to analyze US household debt service payments an
 
 The analytic dataset consisted of three time series (TS) variables (Table 1).  All variables were obtained from the Federal Reserve Bank of St. Louis, all share a common year of valuation ($US 2012), and all have already been seasonally adjusted.
 
+**Table 1.  Analytic dataset contents.**
 
 | **Variable**      	| **Description**                                                                                 	| **Reference**    	|
 |-------------------	|-------------------------------------------------------------------------------------------------	|------------------	|
@@ -249,31 +253,52 @@ grid.arrange(disp_AG_sq, disp_AG_abs, nrow = 1,
 ```
 
 ```{r forecast_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+disp_forecast <- disp_fit %>%
+  forecast(h = 3, level = 95)
+
+disp_train_vec <- as.vector(fred_disposable_train)
+time <- seq(from = 1980, to = 2017.75, by = 0.25)
+disp_train_df <- as.tibble(cbind(time, disp_train_vec))
+
+disp_preds <- as.vector(disp_forecast$mean)
+predtime <- seq(from = 2018, to = 2018.5, by = 0.25)
+disp_pred_df <- as.tibble(cbind(predtime, disp_preds))
+
+disp_actual_df <- as.tibble(cbind(predtime, as.vector(tail(fred_disposable, 3)))) %>% 
+  rename(disp_actual = V1)
+
+disp_preds_kable <- as.tibble(cbind(c("Q1 2018", "Q2 2018", "Q3 2018"), 
+                                    disp_preds, 
+                                    as.vector(tail(fred_disposable, 3)))) %>% 
+  mutate(disp_preds = currency(disp_preds, digits = 0, symbol = "$")) %>% 
+  mutate(V2 = currency(V2, digits = 0, symbol = "$")) %>% 
+  rename(Time = V1,
+         `Predicted Values` = disp_preds,
+         `Actual Values` = V2) %>% 
+  kable(format = "markdown")
+```
+
+Predicted and observed disposable income values for Q1 through Q3 2018 are shown in Table 2.  The observed values are marginally greater than predicted values in each case, and fall within the 95% prediction interval (Fig. 12).
+
+**Table 2.  Predicted and Observed Values, Disposable Income, Q1 through Q3.**
+
+```{r disp_pred_kbl, echo = FALSE}
+disp_preds_kable
+```
+
+```{r forecast_disp_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 disp_forecast_plot <- disp_fit %>% 
   forecast(h = 3, level = 95) %>%
   autoplot() + 
+  geom_line(data = disp_pred_df, aes(x = predtime, y = disp_preds), color = "red") +
+  geom_point(data = disp_pred_df, aes(x = predtime, y = disp_preds), color = "red", size = 1.0) +
+  geom_line(data = disp_actual_df, aes(x = predtime, y = disp_actual)) +
+  scale_y_continuous(labels = dollar_format(prefix = "$")) +
+  guides(fill = FALSE) +
   xlab("Year") +
   ylab("") +
   ggtitle("Figure 12.  Predicted vs. Actual Values, Disposable Income")
 disp_forecast_plot
-
-
-#### CONTINUE HERE ----
-
-# Next task is to create dataframes for train + prediction vs total
-# Then plot together via ggplot2
-# and pipe in autoplot() output for CI
-
-# disp_forecast <- disp_fit %>% 
-#   forecast(h = 3, level = 95)
-# 
-# disp_preds <- disp_forecast$mean %>% ts(start = 2018, frequency = 4)
-# 
-# disp_pred_plot <- ggplot() +
-#   geom_line(data = fred_disposable, aes(x = ))
-
-
-
 ```
 
 
