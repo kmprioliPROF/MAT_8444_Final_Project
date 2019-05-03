@@ -79,11 +79,13 @@ abstract: "BACKGROUND text METHODS text RESULTS text CONCLUSION text"
 
 library(tidyverse)
 library(forecast)     # For tidy time series analysis and graphics
+library(lmtest)       # For getting p-values for Arima() output 
 library(ggthemr)      # For prettifying output
 library(gridExtra)    # For grid.arrange()
 library(grid)         # For arrangeGrob()
 library(astsa)        # For sarima() and sarima.for()
 library(scales)       # For dollar_format()
+
 
 ggthemr("flat")
 ```
@@ -92,7 +94,7 @@ ggthemr("flat")
 ## **Background**
 
 
-THe objective of this study was to analyze US household debt service payments and personal savings as they relate to real per-capita disposable income over time.
+The objective of this study was to analyze US household debt service payments and personal savings as they relate to real per-capita disposable income over time.
 
 ## **Methods**
 
@@ -117,6 +119,7 @@ To model the data, each TS was subset to a "training" dataset capped at Q3 2017,
 
 
 All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Computing, Vienna, Austria) using packages `forecast` (@pkg_forecast) and `astsa` (@pkg_astsa) for specialized time series calculations and plots.  All statistical tests were evaluated against a significance threshold of $\alpha = 0.05$.
+
 
 ## **Results**
 
@@ -193,36 +196,25 @@ fred_savings_plot <- ggtsdisplay(dsavings, points = FALSE, lag.max = 50,
   main = "Figure 6.  Personal Savings as a Percent of Disposable Personal Income, Differenced Once")
 ```
 
-Classical decomposition of each TS is shown in Figs. 7-9.  For each TS, the seasonal component was small in magnitude when compared to the raw TS, with personal savings having the most pronounced seasonal component.
+Classical decomposition of the debt and savings TS is shown in Figs. 7-8.  For both TS, the seasonal component was small in magnitude when compared to the raw TS, with personal savings having the more pronounced seasonal component.
 
 ```{r decomposition, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
-fred_disp_decompose <- decompose(fred_disposable) %>% 
-  autoplot(main = "Figure 7.  Disposable Personal Income, Decomposition")
-fred_disp_decompose
-
 fred_debt_decompose <- decompose(fred_debt) %>% 
-  autoplot(main = "Figure 8.  Debt Service Payments, Decomposition")
+  autoplot(main = "Figure 7.  Debt Service Payments, Decomposition")
 fred_debt_decompose
 
 fred_savings_decompose <- decompose(fred_savings) %>% 
-  autoplot(main = "Figure 9.  Personal Savings, Decomposition")
+  autoplot(main = "Figure 8.  Personal Savings, Decomposition")
 fred_savings_decompose
 ```
 
-The cross-correlation function for savings vs. debt is shown in Fig. 10.  For the raw data, several negative values are seen for the CCF at lags $h = -1$ through $h = -18$, indicating that decreasing household debt may be a good predictor for increasing savings at these lags.  For the differenced data, there is a cross-correlation seen at lag $h = -1$; however, it is small in magnitude and thus differenced debt at $h = -1$ is not expected to be a good predictor of differenced savings.
+The cross-correlation function for differenced savings vs. differenced debt is shown in Fig. 9.  A cross-correlation is seen at lag $h = -1$; however, it is small in magnitude which suggests that differenced debt at $h = -1$ may be a weak predictor of differenced savings.
 
 ```{r ccf, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-dbt <- as.vector(fred_debt)
-sav <- as.vector(fred_savings)
 ddbt <- as.vector(ddebt)
 dsav <- as.vector(dsavings)
-ccf_raw <- ggCcf(x = dbt, y = sav) + ylim(-1, 1) + ggtitle("Savings vs. Debt")
 ccf_diff <- ggCcf(x = ddbt, y = dsav) + ylim(-1, 1) + 
-  ggtitle("Differenced Savings vs. Differenced Debt")
-grid.arrange(ccf_raw, ccf_diff, nrow = 1,
-             top = textGrob("Figure 10.  Cross-Correlation Function",
-                            gp = gpar(fontsize = 16, fontface = "bold", col = "#34495E"),
-                            x = 0.025, hjust = 0))
+  ggtitle("Figure 9.  Differenced Savings vs. Differenced Debt")
 ```
 
 ### *Modeling and Predictions*
@@ -232,14 +224,28 @@ aarima_disp <- auto.arima(fred_disposable_train)
 #aarima_disp
 ```
 
-For disposable income, the model suggested by `auto.arima()` was ARIMA $(1, 1, 0)$ with drift; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yielded a *p*-value of 0.3746 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates approximate normality of residuals with some deviation about the tails.  This model fits the training dataset reasonably well.
+For disposable income, the model suggested by `auto.arima()` was ARIMA $(1, 1, 0)$ with drift; `checkresiduals()` output for the fitted model is shown in Fig. 10.  The Ljung-Box test (not shown in Fig. 10) yielded a *p*-value of 0.3746 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 10 - namely, the ACF plot looks like white noise, and the histogram demonstrates approximate normality of residuals with some deviation about the tails.  This model fits the training dataset reasonably well.
 
 ```{r Arima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
-#disp_fit <- Arima(fred_disposable, order = c(2, 1, 0), seasonal = c(0, 0, 1), include.drift = TRUE)
 disp_fit <- Arima(fred_disposable_train, order = c(1, 1, 0), include.drift = TRUE)
 disp_fit
+disp_fit_pvals <- coeftest(disp_fit)   # Checking for significance of model terms
+disp_fit_pvals
 
 checkresiduals(disp_fit, points = FALSE)
+```
+
+No ARCH/GARCH behavior is seen in the residuals for this model (Fig. 11).
+
+```{r disp_resids, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+disp_resids <- disp_fit$residuals
+disp_AG_sq <- ggAcf(disp_resids * disp_resids, lag.max = 50) + ylim(-1, 1) + ggtitle("Squared Residuals")
+disp_AG_abs <- ggAcf(abs(disp_resids), lag.max = 50) + ylim(-1, 1) + ggtitle("Absolute Value of Residuals")
+
+grid.arrange(disp_AG_sq, disp_AG_abs, nrow = 1,
+             top = textGrob("Figure 11.  Autocorrelation Function for Residuals",
+                            gp = gpar(fontsize = 16, fontface = "bold", col = "#34495E"),
+                            x = 0.025, hjust = 0))
 ```
 
 ```{r forecast_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
