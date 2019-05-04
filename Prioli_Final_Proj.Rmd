@@ -1,5 +1,5 @@
 ---
-title: 'MAT 8444 Final Project'
+title: 'Disposable Income, Debt, and Savings:  Q1 1980 through Q3 2018'
 author: "Katherine M. Prioli"
 date: "May 10, 2019"
 output:
@@ -256,11 +256,62 @@ fred_savings_decompose
 i <- i + 1
 ```
 
-The cross-correlation function for differenced savings vs. differenced debt is shown in Fig. 9.  A cross-correlation is seen at lag $h = -1$; however, it is small in magnitude which suggests that differenced debt at $h = -1$ may be a weak predictor of differenced savings.
+
+```{r dsav_pgram_freqs, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+n <- length(dsavings)
+P_dsav <- Mod(2 * fft(dsavings) / n)^2
+freq_dsav <- 0:(n - 1) / n
+pgram_dsav_df <- as.tibble(cbind(P_dsav, freq_dsav))
+
+pgram_dsav_plot <- ggplot(data = pgram_dsav_df, aes(x = freq_dsav, y = P_dsav)) +
+  geom_line() +
+  xlim(0, 0.5) +
+  xlab("Frequency") +
+  ylab("Scaled Periodogram")
+
+pgram_dsav_peaks <- pgram_dsav_df %>% 
+  rename(Frequency = freq_dsav,
+         Peak = P_dsav) %>% 
+  mutate(grp = case_when(
+    Frequency < 0.2 ~ 1,                            # Boundaries chosen by visual inspection
+    Frequency >= 0.2 & Frequency < 0.4 ~ 2,         # of the scaled periodogram
+    Frequency >= 0.4 & Frequency < 0.4375 ~ 3,
+    Frequency >= 0.4375 & Frequency < 0.45 ~ 4,
+    Frequency >= 0.45 & Frequency < 0.5 ~ 5
+  )) %>% 
+  group_by(grp) %>% 
+  mutate(pk_bin = case_when(
+    Peak == max(Peak) ~ 1
+  )) %>% 
+  filter(grp %in% 1:5 & pk_bin == 1) %>% 
+  ungroup() %>% 
+  select(Frequency) %>% 
+  arrange(Frequency) %>% 
+  mutate(Frequency = round(Frequency, digits = 3))
+```
+
+The scaled periodogram for differenced savings is presented in Figure 9.  All peak values in this plot are quite small.  Five peaks are seen; key frequencies observed are $\omega_{1}$ = `r pgram_dsav_peaks[[1, 1]]`, $\omega_{2}$ = `r pgram_dsav_peaks[[2, 1]]`, and $\omega_{3}$ = `r pgram_dsav_peaks[[4, 1]]`, with some possible clustering about $\omega_{3}$, indicating it is not a fundamenal frequency.  All peaks observed are of small magnitude, indicating that the seasonal component of this data is weak and thus limiting the usefulness of the frequency domain approach.
+
+**Figure `r i`.  Scaled Periodogram for Household Debt Services TS**
+
+```{r f9_dsav_pgram, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+pgram_dsav_plot
+i <- i + 1
+```
+
+**Table 2.  Key Frequencies, Scaled Periodogram**
+
+```{r pgram_freqs, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+pgram_dsav_peaks_kable <- pgram_dsav_peaks %>% 
+  kable(format = "markdown")
+pgram_dsav_peaks_kable
+```
+
+The cross-correlation function for differenced savings vs. differenced debt is shown in Fig. 10.  A cross-correlation is seen at lag $h = -1$; however, it is small in magnitude which suggests that differenced debt at $h = -1$ may be a weak predictor of differenced savings.
 
 **Figure `r i`.  Differenced Savings vs. Differenced Debt**
 
-```{r f9_ccf, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+```{r f10_ccf, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 ddbt <- as.vector(ddebt)
 dsav <- as.vector(dsavings)
 ccf_diff <- ggCcf(x = ddbt, y = dsav) + ylim(-1, 1) + ggtitle("")
@@ -275,7 +326,7 @@ aarima_disp <- auto.arima(fred_disposable_train)
 #aarima_disp
 ```
 
-For disposable income, the model suggested by `auto.arima()` was ARIMA $(1, 1, 0)$ with drift; `checkresiduals()` output for the fitted model is shown in Fig. 10.  The Ljung-Box test (not shown in Fig. 10) yielded a *p*-value of 0.3746 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 10 - namely, the ACF plot looks like white noise, and the histogram demonstrates approximate normality of residuals with some deviation about the tails.  This model fits the training dataset reasonably well.
+For disposable income, the model suggested by `auto.arima()` was ARIMA $(1, 1, 0)$ with drift; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yielded a *p*-value of 0.3746 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates approximate normality of residuals with nontrivial deviation about the tails.  Both the AR(1) and drift parameters in the model are significant at the $\alpha = 0.05$ threshold.  Despite the suspected lack of normality in the residuals, this model fits the training dataset reasonably well.  Additionally, ARCH/GARCH behavior was not seen in the model residuals (Fig. 12).
 
 ```{r Arima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 disp_fit <- Arima(fred_disposable_train, order = c(1, 1, 0), include.drift = TRUE)
@@ -286,16 +337,14 @@ disp_fit_pvals
 
 **Figure `r i`.  Residual Fit, Disposable Income Model: ARIMA(1, 1, 0) with Drift**
 
-```{r f10_Arima_resid, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
+```{r f11_Arima_resid, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 checkresiduals(disp_fit, points = FALSE)
 i <- i + 1
 ```
 
-No ARCH/GARCH behavior is seen in the residuals for this model (Fig. 11).
-
 **Figure `r i`.  Autocorrelation Function for Residuals**
 
-```{r f11_disp_resids, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+```{r f12_disp_resids, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 disp_resids <- disp_fit$residuals
 disp_AG_sq <- ggAcf(disp_resids * disp_resids, lag.max = 50) + ylim(-1, 1) + ggtitle("Squared Residuals")
 disp_AG_abs <- ggAcf(abs(disp_resids), lag.max = 50) + ylim(-1, 1) + ggtitle("Absolute Value of Residuals")
@@ -323,8 +372,11 @@ disp_actual_df <- as.tibble(cbind(predtime, as.vector(tail(fred_disposable, 3)))
   rename(disp_actual = V1)
 
 disp_preds_kable <- as.tibble(cbind(c("Q1 2018", "Q2 2018", "Q3 2018"), 
-                                    disp_preds, 
+                                    disp_preds,
                                     as.vector(tail(fred_disposable, 3)))) %>% 
+  mutate(disp_preds = as.numeric(disp_preds)) %>% 
+  mutate(V2 = as.numeric(V2)) %>% 
+  mutate(`Percent Error` = round(((disp_preds - V2) * 100) / V2, digits = 2)) %>% 
   mutate(disp_preds = currency(disp_preds, digits = 0, symbol = "$")) %>% 
   mutate(V2 = currency(V2, digits = 0, symbol = "$")) %>% 
   rename(Time = V1,
@@ -333,9 +385,9 @@ disp_preds_kable <- as.tibble(cbind(c("Q1 2018", "Q2 2018", "Q3 2018"),
   kable(format = "markdown")
 ```
 
-Predicted and observed disposable income values for Q1 through Q3 2018 are shown in Table 2.  The observed values are marginally greater than predicted values in each case, and fall within the 95% prediction interval (Fig. 12).
+Predicted and observed disposable income values for Q1 through Q3 2018 are shown in Table 3.  The observed values are marginally greater than predicted values in each case, and fall within the 95% prediction interval (Fig. 13).
 
-**Table 2.  Predicted and Observed Values, Disposable Income, Q1 through Q3**
+**Table 3.  Predicted and Observed Values, Disposable Income, Q1 through Q3**
 
 ```{r disp_pred_kbl, echo = FALSE}
 disp_preds_kable
@@ -343,7 +395,7 @@ disp_preds_kable
 
 **Figure `r i`.  Predicted vs. Actual Values, Disposable Income**
 
-```{r f12_forecast_disp_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+```{r f13_forecast_disp_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 disp_forecast_plot <- disp_fit %>% 
   forecast(h = 3, level = 95) %>%
   autoplot() + 
@@ -360,6 +412,7 @@ disp_forecast_plot
 i <- i + 1
 ```
 
+# RETHINK EVERYTHING AFTER THIS
 
 ```{r autoarima_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 aarima_debt <- auto.arima(fred_debt_train)
@@ -380,7 +433,7 @@ aarima_savings <- auto.arima(fred_savings_train)
 #aarima_savings
 ```
 
-For savings, `auto.arima()` suggested ARMA $(1, 1, 0) \times (0, 0, 1)_{4}$, with no seasonal component.  The `checkresiduals()` output is presented in Fig. 14.  The Ljung-Box test was once again nonsignificant at $p = 0.8278$ over 8 lags, the ACF plot of residuals is consistent with white noise, and the histogram shows general normality of residuals with some deviation about the tails; thus, the model fits well.
+For savings, `auto.arima()` suggested ARMA $(1, 1, 0) \times (0, 0, 1)_{4}$, with no seasonal component.  The `checkresiduals()` output is presented in Fig. 14.  The Ljung-Box test was once again nonsignificant at $p = 0.8278$ over 8 lags, the ACF plot of residuals is consistent with white noise, and the histogram shows general normality of residuals with nontrivial deviation about the tails; thus, the model fits well.
 
 ```{r Arima_savings, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 savings_fit <- Arima(fred_savings_train, order = c(1, 1, 0), seasonal = c(0, 0, 1), include.drift = FALSE)
