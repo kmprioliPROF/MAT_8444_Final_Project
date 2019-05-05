@@ -85,7 +85,7 @@ references:
   issued:
     year: 2018
   title: Household Savings
-- URL: https://data.oecd.org/hha/household-savings.htm
+- URL: https://data.oecd.org/hha/household-spending.htm
   author:
   - family: Organisation for Economic Co-operation and Development
   id: oecd_spending
@@ -142,7 +142,7 @@ Data pertaining to disposable personal income, household debt service payments, 
 
 ### *Data Exploration*
 
-Each TS was separately explored via the `forecast::autoplot()` function, which yields plots for the raw time series along with its autocorrelation (ACF) and partial autocorrelation (PACF) functions.  Differencing was applied where needed.  Classical decomposition was performed for each TS via `decompose()` to understand the seasonality, if any, of these time series.  Where meaningful seasonality was suspected, a periodogram was generated to determine important frequencies.  To understand how savings may be dependent on debt, the cross-correlation function (CCF) was computed and plotted for differenced `fred_savings` vs. differenced `fred_debt`.
+Each TS was separately explored via the `forecast::ggtsdisplay()` function, which yields plots for the raw time series along with its autocorrelation (ACF) and partial autocorrelation (PACF) functions.  Differencing was applied where needed.  Classical decomposition was performed for each TS via `decompose()` to understand the seasonality, if any, of these time series.  Where meaningful seasonality was suspected, a periodogram was generated to determine important frequencies.  To understand how savings may be dependent on debt, the cross-correlation function (CCF) was computed and plotted for differenced `fred_savings` vs. differenced `fred_debt`.
 
 ### *Modeling Disposable Income*
 
@@ -156,8 +156,6 @@ All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Compu
 
 
 ## **Results**
-
-Text
 
 ### *Data Exploration*
 
@@ -198,7 +196,7 @@ fred_savings_train <- read_csv("data/fred_savings.csv") %>%
   ts(start = 1980, frequency = 4)
 ```
 
-Figures 1-3 show the `autoplot()` output for the three time series.  A generally increasing trend is seen in the plot of disposable income (Fig. 1).  Because these data are adjusted for inflation to \$US 2012, this trend represents a true increase in disposable income, not inflation, and thus the time series is not stationary.  The ACF plot shows a slow linear decline in $\hat{\rho}(h)$ with increasing *h*, suggesting nonstationarity.  The graphs of debt payments and savings (Figs. 2 and 3 respectively) do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (which is expected, because the data are provided in seasonally adjusted form).  Additionally, the ACF plots for both debt payments and savings are suggestive of nonstationarity due to their slow decline, and thus required differencing to achieve stationarity.
+Figures 1-3 show the `ggtsdisplay()` output for the three time series.  A generally increasing trend is seen in the plot of disposable income (Fig. 1).  Because these data are adjusted for inflation to \$US 2012, this trend represents a true increase in disposable income, not inflation, and thus the time series is not stationary.  The ACF plot shows a slow linear decline in $\hat{\rho}(h)$ with increasing *h*, suggesting nonstationarity.  The graphs of debt payments and savings (Figs. 2 and 3 respectively) do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (which is expected, because the data are provided in seasonally adjusted form).  Additionally, the ACF plots for both debt payments and savings are suggestive of nonstationarity due to their slow decline, and thus required differencing to achieve stationarity.
 
 **Figure `r i`.  Real Disposable Personal Income Per Capita**
 
