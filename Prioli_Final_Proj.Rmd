@@ -71,6 +71,34 @@ references:
   issued: 
     year: 2019
   title: astsa - Applied Statistical Time Series Analysis
+- URL: https://www.newyorkfed.org/medialibrary/interactives/householdcredit/data/pdf//HHDC_2018Q4.pdf
+  author:
+  - family: Federal Reserve Bank of New York Center for Microeconomic Data
+  id: nyfed_Q42018
+  issued:
+    year: 2019
+  title: Quarterly Report on Household Debt and Credit - 2018 Q4
+- URL: https://data.oecd.org/hha/household-savings.htm
+  author:
+  - family: Organisation for Economic Co-operation and Development
+  id: oecd_savings
+  issued:
+    year: 2018
+  title: Household Savings
+- URL: https://data.oecd.org/hha/household-savings.htm
+  author:
+  - family: Organisation for Economic Co-operation and Development
+  id: oecd_spending
+  issued:
+    year: 2018
+  title: Household Spending
+- URL: https://fred.stlouisfed.org/series/CPALTT01USM661S
+  author:
+  - family: Federal Reserve Bank of St. Louis
+  id: fred_CPI
+  issued:
+    year: 2016
+  title: Consumer Price Index - Total All Items for the United States [CPALTT01USM661S]
 abstract: "BACKGROUND text METHODS text RESULTS text CONCLUSION text"
 ---
 
@@ -87,9 +115,6 @@ library(scales)        # For dollar_format()
 library(kableExtra)    # For kable()
 library(formattable)   # For currency() formatting
 
-library(astsa)         # For sarima() and sarima.for()
-
-
 ggthemr("flat")
 
 i <- 1                  # For figure numbering
@@ -98,12 +123,13 @@ i <- 1                  # For figure numbering
 
 ## **Background**
 
+Americans are on average spending more and saving less over the past decade.  As of the fourth quarter 2018, total household debt in the United States has hit a ten-year high at \$869B (@nyfed_Q42018).  As debt increases, so does household spending, up from \$9.7M in 2008 to $12.9M in 2017 (@oecd_spending).  Total household savings is on the decline, decreasing from 9.1% in 2012 to 6.9% in 2017 (@oecd_savings).  Wages have increased modestly during this time, and appears largely attributable to inflation (@fred_CPI).
 
-The objective of this study was to analyze US household debt service payments and personal savings as they relate to real per-capita disposable income over time.
+The objective of this study was to analyze US household real per-capita disposable income, debt service payments, and personal savings over time, to understand trends in personal disposable income, and to determine whether savings can accurately be predicted from debt.
 
 ## **Methods**
 
-The analytic dataset consisted of three time series (TS) variables (Table 1).  All variables were obtained from the Federal Reserve Bank of St. Louis, all share a common year of valuation ($US 2012), and all have already been seasonally adjusted.  The data were limited to a common time horizon (Q1 1980 through Q3 2018), yielding 155 observations for each TS.
+Data pertaining to disposable personal income, household debt service payments, and personal savings informed the analytic dataset (Table 1).  All variables were obtained from the Federal Reserve Bank of St. Louis, all share a common year of valuation ($US 2012), and all have already been seasonally adjusted.  The data were limited to a common time horizon (Q1 1980 through Q3 2018), yielding 155 observations for each time series (TS).
 
 **Table 1.  Analytic Dataset Contents**
 
@@ -116,13 +142,15 @@ The analytic dataset consisted of three time series (TS) variables (Table 1).  A
 
 ### *Data Exploration*
 
-Each TS was separately explored via the `forecast::autoplot()` function, which yields plots for the raw time series along with its autocorrelation (ACF) and partial autocorrelation (PACF) functions.  Differencing was applied where needed.  Classical decomposition was performed for each TS via `decompose()` to understand the seasonality, if any, of these time series.  Where seasonality was suspected, a periodogram was generated to determine important frequencies.  To understand how savings may be dependent on debt, the cross-correlation function (CCF) was computed and plotted for differenced `fred_savings` vs. differenced `fred_debt`.
+Each TS was separately explored via the `forecast::autoplot()` function, which yields plots for the raw time series along with its autocorrelation (ACF) and partial autocorrelation (PACF) functions.  Differencing was applied where needed.  Classical decomposition was performed for each TS via `decompose()` to understand the seasonality, if any, of these time series.  Where meaningful seasonality was suspected, a periodogram was generated to determine important frequencies.  To understand how savings may be dependent on debt, the cross-correlation function (CCF) was computed and plotted for differenced `fred_savings` vs. differenced `fred_debt`.
 
-### *Modeling and Predictions*
+### *Modeling Disposable Income*
 
-To model the disposable income data, the `fred_disposable` TS was subset to a "training" dataset capped at Q3 2017, and was then passed into `forecast::auto.arima()`.  The model suggested by `auto.arima()` was fit using `forecast::Arima()`, and model fit was assesed both through analysis of residuals using `forecast::checkresiduals()` and by checking *p*-values via `lmtest::coeftest()`.  Squared and absolute value residuals were assessed for ARCH/GARCH behavior.  Finally, `forecast::forecast()` was used to predict the next three values (i.e., Q1 2018 through Q3 2018) along with a confidence interval, and these predictions were compared to the values found in the full dataset.
+To model the disposable income data, the `fred_disposable` TS was subset to a "training" dataset capped at Q3 2017, and a suggested fit was obtained via `forecast::auto.arima()`.  The suggested model was fit using `forecast::Arima()`, and model fit was assesed both through analysis of residuals using `forecast::checkresiduals()` and by checking *p*-values via `lmtest::coeftest()`.  ACF plots of squared and absolute value residuals were assessed for ARCH/GARCH behavior.  Finally, `forecast::forecast()` was used to predict the next three values (i.e., Q1 2018 through Q3 2018) along with a confidence interval, and these predictions were compared to the values found in the full dataset.
 
-Since both debt service payments (`fred_debt`) personal savings (`fred_savings`) are given as a percentage of disposable personal income, it is reasonable to hypothesize that, as debt payments increase, personal savings may decrease.  Under this hypothesis, differenced debt was used to predict differenced savings using A LINEAR MODEL??? 
+### *Modeling Savings vs. Debt*
+
+Since both debt service payments (`fred_debt`) personal savings (`fred_savings`) are expressed as a percentage of disposable personal income, it is reasonable to hypothesize that, as debt payments increase, personal savings may decrease.  Under this hypothesis and using the same set of functions as described above, debt was used to predict savings for Q1 2018 through Q3 2018 using training datasets capped at Q3 2017 in an ARIMA model that incorporates both differencing and a lag offset informed by the CCF of differenced savings vs. differenced debt.  Predictions were again compared to the observed values available in the full `fred_savings` dataset.
 
 All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Computing, Vienna, Austria) using packages `forecast` (@pkg_forecast) and `astsa` (@pkg_astsa) for specialized time series calculations and plots.  All statistical tests were evaluated against a significance threshold of $\alpha = 0.05$.
 
@@ -330,7 +358,7 @@ grid.arrange(scatt_savdebt, ccf_diff, nrow = 1)
 i <- i + 1
 ```
 
-### *Modeling and Predictions*
+### *Modeling Disposable Income*
 
 ```{r autoarima_disposable, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 aarima_disp <- auto.arima(fred_disposable_train)
@@ -423,6 +451,8 @@ disp_forecast_plot
 i <- i + 1
 ```
 
+### *Modeling Savings vs. Debt*
+
 Text
 
 ```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
@@ -465,14 +495,6 @@ i <- i + 1
 Text
 
 ```{r savdebt_forecast_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-# savdebt_forecast <- savdebt_fit %>% forecast(xreg = tail(fred_debt, 3), level = 95)
-# savdebt_forecast_plot <- savdebt_forecast %>% 
-#   autoplot() +
-#   xlab("Year") +
-#   ylab("") +
-#   ggtitle("")
-# savdebt_forecast_plot
-
 savdebt_forecast <- savdebt_fit %>%                # Using debt for Q4 2017 through Q2 2018
   forecast(xreg = fred_debt[152:154], level = 95)  # to predict savings for Q1 2018 through Q3 2018
 
