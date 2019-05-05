@@ -290,9 +290,9 @@ pgram_dsav_peaks <- pgram_dsav_df %>%
   mutate(Frequency = round(Frequency, digits = 3))
 ```
 
-The scaled periodogram for differenced savings is presented in Figure 9.  All peak values in this plot are quite small.  Five peaks are seen; key frequencies observed are $\omega_{1}$ = `r pgram_dsav_peaks[[1, 1]]`, $\omega_{2}$ = `r pgram_dsav_peaks[[2, 1]]`, and $\omega_{3}$ = `r pgram_dsav_peaks[[4, 1]]`, with some possible clustering about $\omega_{3}$, indicating it is not a fundamenal frequency.  All peaks observed are of small magnitude, indicating that the seasonal component of this data is weak and thus limiting the usefulness of the frequency domain approach.
+The scaled periodogram for differenced savings is presented in Figure 9.  All peak values in this plot are quite small.  Five peaks are seen; key frequencies observed are $\omega_{1}$ = `r pgram_dsav_peaks[[1, 1]]`, $\omega_{2}$ = `r pgram_dsav_peaks[[2, 1]]`, and $\omega_{3}$ = `r pgram_dsav_peaks[[4, 1]]`, with some possible clustering about $\omega_{3}$, indicating it is not a fundamenal frequency.  Because these data are already seasonally adjusted, none of these frequencies are expected to have real meaning; additionally, all peaks observed are of small magnitude, consistent with a weak seasonal component, and thus limiting the usefulness of the frequency domain approach.
 
-**Figure `r i`.  Scaled Periodogram for Household Debt Services TS**
+**Figure `r i`.  Scaled Periodogram for Differenced Savings**
 
 ```{r f9_dsav_pgram, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 pgram_dsav_plot
@@ -307,7 +307,7 @@ pgram_dsav_peaks_kable <- pgram_dsav_peaks %>%
 pgram_dsav_peaks_kable
 ```
 
-A scatterplot and the cross-correlation function for differenced savings vs. differenced debt are shown in Fig. 10.  The scatterplot shows a general decrease in differenced savings as differenced debt increases, but a nontrivial degree of spread is seen in the plotted points.  In the CCF plot, a cross-correlation is seen at lag $h = -1$; however, it is small in magnitude which suggests that differenced debt at $h = -1$ may only be weakly predictor of differenced savings.
+A scatterplot and the cross-correlation function for differenced savings vs. differenced debt are shown in Fig. 10.  The scatterplot shows a general decrease in differenced savings as differenced debt increases, but a nontrivial degree of spread is seen in the plotted points.  In the CCF plot, a cross-correlation is seen at lag $h = -1$; however, it is small in magnitude which suggests that differenced debt at $h = -1$ may only be weakly predictive of differenced savings.
 
 **Figure `r i`.  Relationship between Differenced Savings and Differenced Debt**
 
@@ -390,7 +390,7 @@ disp_preds_kable <- as.tibble(cbind(c("Q1 2018", "Q2 2018", "Q3 2018"),
   mutate(`Percent Error` = round(((disp_preds - V2) * 100) / V2, digits = 2)) %>% 
   mutate(disp_preds = currency(disp_preds, digits = 0, symbol = "$")) %>% 
   mutate(V2 = currency(V2, digits = 0, symbol = "$")) %>% 
-  rename(Time = V1,
+  rename(Timepoint = V1,
          `Predicted Values` = disp_preds,
          `Actual Values` = V2) %>% 
   kable(format = "markdown")
@@ -398,7 +398,7 @@ disp_preds_kable <- as.tibble(cbind(c("Q1 2018", "Q2 2018", "Q3 2018"),
 
 Predicted and observed disposable income values for Q1 through Q3 2018 are shown in Table 3.  The observed values are marginally greater than predicted values in each case, and fall within the 95% prediction interval (Fig. 13).
 
-**Table 3.  Predicted and Observed Values, Disposable Income, Q1 through Q3**
+**Table 3.  Predicted and Observed Values, Disposable Income, Q1 through Q3 2018**
 
 ```{r disp_pred_kbl, echo = FALSE}
 disp_preds_kable
@@ -423,25 +423,110 @@ disp_forecast_plot
 i <- i + 1
 ```
 
-```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-ddebt_train <- as.tibble(diff(fred_debt_train)) %>% rename(ddebt = debt) %>% ts(start = 1980.25, frequency = 4)
-dsavings_train <- as.tibble(diff(fred_savings_train)) %>% rename(dsavings = savings) %>% ts(start = 1980.25, frequency = 4)
+Text
 
-savdebt_fit <- auto.arima(dsavings_train,         # auto.arima() suggests ARIMA(2,0,0)(2,0,1)[4]
-                          xreg = ddebt_train)#,     # but the ar2 coefficient is nonsignificant;
-                          #max.p = 1)              # using max.p = 1 to omit ar(2) term
+```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+# ddebt_train <- as.tibble(diff(fred_debt_train)) %>% rename(ddebt = debt) %>% ts(start = 1980.25, frequency = 4)
+# dsavings_train <- as.tibble(diff(fred_savings_train)) %>% rename(dsavings = savings) %>% ts(start = 1980.25, frequency = 4)
+# dlen <- length(ddebt_train)
+# 
+# savdebt_fit <- auto.arima(dsavings_train[2:dlen],
+#                           xreg = ddebt_train[1:dlen - 1])
+# savdebt_fit
+# coeftest(savdebt_fit)
+
+dlen <- length(fred_savings_train)
+
+savdebt_ts <- as.tibble(cbind(fred_debt_train[1:dlen - 1],
+                              fred_savings_train[2:dlen])) %>% 
+  rename(debt = V1,
+         savings = V2) %>% 
+  ts(start = 1980, frequency = 4)
+
+savdebt_fit <- auto.arima(savdebt_ts[, 2],
+                          xreg = savdebt_ts[, 1],
+                          max.P = 0,               # Limiting to P = 0 and Q = 0
+                          max.Q = 0)               # because sma1 and sar1 coeffs are NSS on coeftest()
+                          
+# savdebt_fit <- auto.arima(fred_savings_train[2:dlen],
+#                                  xreg = fred_debt_train[1:dlen - 1])
+
 savdebt_fit
 coeftest(savdebt_fit)
 ```
 
-
-**Figure `r i`.  Residual Fit, Regression of Differenced Savings on Differenced Debt**
+**Figure `r i`.  Residual Fit, Lagged Regression of Differenced Savings on Differenced Debt**
 
 ```{r f14_forecast_disp_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-checkresiduals(savdebt_fit)
+checkresiduals(savdebt_fit, points = FALSE)
 i <- i + 1
 ```
 
+Text
+
+```{r savdebt_forecast_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+# savdebt_forecast <- savdebt_fit %>% forecast(xreg = tail(fred_debt, 3), level = 95)
+# savdebt_forecast_plot <- savdebt_forecast %>% 
+#   autoplot() +
+#   xlab("Year") +
+#   ylab("") +
+#   ggtitle("")
+# savdebt_forecast_plot
+
+savdebt_forecast <- savdebt_fit %>%                # Using debt for Q4 2017 through Q2 2018
+  forecast(xreg = fred_debt[152:154], level = 95)  # to predict savings for Q1 2018 through Q3 2018
+
+savdebt_preds <- as.vector(savdebt_forecast$mean)
+predtime <- seq(from = 2018, to = 2018.5, by = 0.25)
+savdebt_pred_df <- as.tibble(cbind(predtime, savdebt_preds))
+
+sav_train_vec <- as.vector(fred_savings_train)
+time <- seq(from = 1980, to = 2017.75, by = 0.25)
+sav_train_df <- as.tibble(cbind(time, sav_train_vec))
+
+savdebt_actual_df <- as.tibble(cbind(predtime, as.vector(tail(fred_savings, 3)))) %>% 
+  rename(sav_actual = V1)
+
+sav_preds_kable <- as.tibble(cbind(c("Q1 2018", "Q2 2018", "Q3 2018"), 
+                                    savdebt_preds,
+                                    as.vector(tail(fred_savings, 3)))) %>% 
+  mutate(savdebt_preds = round(as.numeric(savdebt_preds), digits = 2)) %>% 
+  mutate(V2 = round(as.numeric(V2), digits = 2)) %>% 
+  mutate(`Percent Error` = round(((savdebt_preds - V2) * 100) / V2, digits = 2)) %>% 
+  rename(Timepoint = V1,
+         `Predicted Values` = savdebt_preds,
+         `Actual Values` = V2) %>% 
+  kable(format = "markdown")
+
+savdebt_forecast_plot <- savdebt_fit %>% 
+  forecast(xreg = tail(fred_debt, 3), level = 95) %>%
+  autoplot() + 
+  geom_line(data = savdebt_pred_df, aes(x = predtime, y = savdebt_preds), color = "red") +
+  geom_point(data = savdebt_pred_df, aes(x = predtime, y = savdebt_preds), color = "red", size = 1.0) +
+  geom_line(aes(x = savdebt_pred_df$predtime, y = tail(fred_savings, 3))) +
+  scale_y_continuous(labels = percent_format(suffix = "%", scale = 1, accuracy = 2)) +
+  guides(fill = FALSE) +
+  xlab("Year") +
+  ylab("") +
+  ggtitle("")
+```
+
+Text
+
+**Table 4.  Predicted and Observed Values, Savings, Q1 through Q3 2018**
+
+```{r savdebt_pred_kbl, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+sav_preds_kable
+```
+
+**Figure `r i`.  Forecast Savings, Lagged Debt Model**
+
+```{r f15_savdebt_forecast_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+savdebt_forecast_plot
+i <- i + 1
+```
+
+Text
 
 
 ## **Discussion**
