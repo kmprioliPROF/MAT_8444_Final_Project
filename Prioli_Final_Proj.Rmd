@@ -307,15 +307,26 @@ pgram_dsav_peaks_kable <- pgram_dsav_peaks %>%
 pgram_dsav_peaks_kable
 ```
 
-The cross-correlation function for differenced savings vs. differenced debt is shown in Fig. 10.  A cross-correlation is seen at lag $h = -1$; however, it is small in magnitude which suggests that differenced debt at $h = -1$ may be a weak predictor of differenced savings.
+A scatterplot and the cross-correlation function for differenced savings vs. differenced debt are shown in Fig. 10.  The scatterplot shows a general decrease in differenced savings as differenced debt increases, but a nontrivial degree of spread is seen in the plotted points.  In the CCF plot, a cross-correlation is seen at lag $h = -1$; however, it is small in magnitude which suggests that differenced debt at $h = -1$ may only be weakly predictor of differenced savings.
 
-**Figure `r i`.  Differenced Savings vs. Differenced Debt**
+**Figure `r i`.  Relationship between Differenced Savings and Differenced Debt**
 
-```{r f10_ccf, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+```{r f10_scatter_ccf, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 ddbt <- as.vector(ddebt)
 dsav <- as.vector(dsavings)
-ccf_diff <- ggCcf(x = ddbt, y = dsav) + ylim(-1, 1) + ggtitle("")
-  #ggtitle("Differenced Savings vs. Differenced Debt")
+
+scatt_savdebt <- ggplot() + 
+  geom_point(aes(x = ddebt, y = dsavings)) + 
+  geom_smooth(aes(x = ddebt, y = dsavings), method = "lm") +
+  xlab("Differenced Debt") + 
+  ylab("Differenced Savings") +
+  ggtitle("Differenced Savings vs. Differenced Debt")
+
+ccf_diff <- ggCcf(x = ddbt, y = dsav) + ylim(-1, 1) + 
+  ggtitle("Cross-Correlation Function")
+
+grid.arrange(scatt_savdebt, ccf_diff, nrow = 1)
+
 i <- i + 1
 ```
 
@@ -412,37 +423,24 @@ disp_forecast_plot
 i <- i + 1
 ```
 
-# RETHINK EVERYTHING AFTER THIS
+```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+ddebt_train <- as.tibble(diff(fred_debt_train)) %>% rename(ddebt = debt) %>% ts(start = 1980.25, frequency = 4)
+dsavings_train <- as.tibble(diff(fred_savings_train)) %>% rename(dsavings = savings) %>% ts(start = 1980.25, frequency = 4)
 
-```{r autoarima_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-aarima_debt <- auto.arima(fred_debt_train)
-#aarima_debt
-```
-
-For debt, `auto.arima()` suggested ARIMA $(1, 1, 2) \times (1, 0, 1)_{4}$.  Output from `checkresiduals()` for the fitted model is shown in Fig. 13.  The Ljung-Box test was nonsignificant at $p = 0.4033$ over 8 lags; additionally, the ACF plot has the appearance of white noise and the histogram shows that residuals are approximately normally distributed.  Thus this model fits well.
-
-```{r Arima_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
-debt_fit <- Arima(fred_debt_train, order = c(1, 1, 2), seasonal = c(1, 0, 1), include.drift = FALSE)
-debt_fit
-
-checkresiduals(debt_fit, points = FALSE)
-```
-
-```{r autoarima_savings, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-aarima_savings <- auto.arima(fred_savings_train)
-#aarima_savings
-```
-
-For savings, `auto.arima()` suggested ARMA $(1, 1, 0) \times (0, 0, 1)_{4}$, with no seasonal component.  The `checkresiduals()` output is presented in Fig. 14.  The Ljung-Box test was once again nonsignificant at $p = 0.8278$ over 8 lags, the ACF plot of residuals is consistent with white noise, and the histogram shows general normality of residuals with nontrivial deviation about the tails; thus, the model fits well.
-
-```{r Arima_savings, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
-savings_fit <- Arima(fred_savings_train, order = c(1, 1, 0), seasonal = c(0, 0, 1), include.drift = FALSE)
-savings_fit
-
-checkresiduals(savings_fit, points = FALSE)
+savdebt_fit <- auto.arima(dsavings_train,         # auto.arima() suggests ARIMA(2,0,0)(2,0,1)[4]
+                          xreg = ddebt_train)#,     # but the ar2 coefficient is nonsignificant;
+                          #max.p = 1)              # using max.p = 1 to omit ar(2) term
+savdebt_fit
+coeftest(savdebt_fit)
 ```
 
 
+**Figure `r i`.  Residual Fit, Regression of Differenced Savings on Differenced Debt**
+
+```{r f14_forecast_disp_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+checkresiduals(savdebt_fit)
+i <- i + 1
+```
 
 
 
