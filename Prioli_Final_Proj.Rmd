@@ -63,14 +63,6 @@ references:
   issued: 
     year: 2019
   title: forecast - Forecasting functions for time series and linear models.  R package version 8.5.
-- URL: https://github.com/nickpoison/astsa
-  author: 
-  - family: Stoffer
-    given: David
-  id: pkg_astsa
-  issued: 
-    year: 2019
-  title: astsa - Applied Statistical Time Series Analysis
 - URL: https://www.newyorkfed.org/medialibrary/interactives/householdcredit/data/pdf//HHDC_2018Q4.pdf
   author:
   - family: Federal Reserve Bank of New York Center for Microeconomic Data
@@ -152,7 +144,7 @@ To model the disposable income data, the `fred_disposable` TS was subset to a "t
 
 Since both debt service payments (`fred_debt`) personal savings (`fred_savings`) are expressed as a percentage of disposable personal income, it is reasonable to hypothesize that, as debt payments increase, personal savings may decrease.  Under this hypothesis and using the same set of functions as described above, debt was used to predict savings for Q1 2018 through Q3 2018 using training datasets capped at Q3 2017 in an ARIMA model that incorporates both differencing and a lag offset informed by the CCF of differenced savings vs. differenced debt.  Predictions were again compared to the observed values available in the full `fred_savings` dataset.
 
-All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Computing, Vienna, Austria) using packages `forecast` (@pkg_forecast) and `astsa` (@pkg_astsa) for specialized time series calculations and plots.  All statistical tests were evaluated against a significance threshold of $\alpha = 0.05$.
+All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Computing, Vienna, Austria) using the `forecast` package (@pkg_forecast) for specialized time series calculations and plots.  All statistical tests were evaluated against a significance threshold of $\alpha = 0.05$.
 
 
 ## **Results**
@@ -220,8 +212,8 @@ i <- i + 1
 
 ```{r f3_exploration_sav, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 fred_savings_plot <- ggtsdisplay(fred_savings, points = FALSE, lag.max = 50,
-                              main = "")
-  #main = "Personal Savings as a Percent of Disposable Personal Income")
+                              #main = "")
+  main = "Personal Savings as a Percent of Disposable Personal Income")
 i <- i + 1
 ```
 
@@ -454,15 +446,6 @@ i <- i + 1
 Text
 
 ```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-# ddebt_train <- as.tibble(diff(fred_debt_train)) %>% rename(ddebt = debt) %>% ts(start = 1980.25, frequency = 4)
-# dsavings_train <- as.tibble(diff(fred_savings_train)) %>% rename(dsavings = savings) %>% ts(start = 1980.25, frequency = 4)
-# dlen <- length(ddebt_train)
-# 
-# savdebt_fit <- auto.arima(dsavings_train[2:dlen],
-#                           xreg = ddebt_train[1:dlen - 1])
-# savdebt_fit
-# coeftest(savdebt_fit)
-
 dlen <- length(fred_savings_train)
 
 savdebt_ts <- as.tibble(cbind(fred_debt_train[1:dlen - 1],
@@ -475,10 +458,6 @@ savdebt_fit <- auto.arima(savdebt_ts[, 2],
                           xreg = savdebt_ts[, 1],
                           max.P = 0,               # Limiting to P = 0 and Q = 0
                           max.Q = 0)               # because sma1 and sar1 coeffs are NSS on coeftest()
-                          
-# savdebt_fit <- auto.arima(fred_savings_train[2:dlen],
-#                                  xreg = fred_debt_train[1:dlen - 1])
-
 savdebt_fit
 coeftest(savdebt_fit)
 ```
