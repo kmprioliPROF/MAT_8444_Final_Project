@@ -430,36 +430,39 @@ i <- i + 1
 
 ### *Modeling Savings vs. Debt*
 
+
+
+
+# CONTINUE HERE AND ADJUST EXPLANATION WORDING THROUGHOUT
+
+
+
+
 For predicting savings from lag-1 debt, the model suggested by `auto.arima()` was ARIMA(1,1,0).  Residual fit diagnostics are presented in Fig. 14.  The histogram of residuals is passably normal, although strong departure from normality is observed in the lower tail.  The ACF plot shows all values within the blue boundaries, the Ljung-Box test is not statistically significant, and no ARCH/GARCH behavior is seen (Fig. 15); thus the residuals are consistent with white noise.  However, when testing for predictor significance, lag-1 debt (`xreg` on output) is found not to be a significant predictor in the model.
 
 
 
 
+<!-- ```{r aarima_dsavddebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4} -->
+<!-- dsav_train <- diff(fred_savings_train) -->
+<!-- ddebt_train <- diff(fred_debt_train) -->
 
+<!-- ddlen <- length(ddebt_train) -->
 
-# CONTINUE HERE AND THINK ABOUT HOW TO EXPLAIN THIS
+<!-- dsavdebt_ts <- as.tibble(cbind(ddebt_train[2:ddlen], -->
+<!--                                dsav_train[1:ddlen - 1])) %>%  -->
+<!--   rename(debt = V1, -->
+<!--          savings = V2) %>%  -->
+<!--   ts(start = 1980, frequency = 4) -->
 
-
-```{r aarima_dsavddebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
-dsav_train <- diff(fred_savings_train)
-ddebt_train <- diff(fred_debt_train)
-
-ddlen <- length(ddebt_train)
-
-dsavdebt_ts <- as.tibble(cbind(ddebt_train[2:ddlen],
-                               dsav_train[1:ddlen - 1])) %>% 
-  rename(debt = V1,
-         savings = V2) %>% 
-  ts(start = 1980, frequency = 4)
-
-dsavdebt_fit <- auto.arima(dsavdebt_ts[, 2],
-                           xreg = dsavdebt_ts[, 1],
-                           max.P = 0,
-                           max.Q = 0)
-dsavdebt_fit
-coeftest(dsavdebt_fit)
-checkresiduals(dsavdebt_fit, points = FALSE)
-```
+<!-- dsavdebt_fit <- auto.arima(dsavdebt_ts[, 2], -->
+<!--                            xreg = dsavdebt_ts[, 1], -->
+<!--                            max.P = 0, -->
+<!--                            max.Q = 0) -->
+<!-- dsavdebt_fit -->
+<!-- coeftest(dsavdebt_fit) -->
+<!-- checkresiduals(dsavdebt_fit, points = FALSE) -->
+<!-- ``` -->
 
 
 ```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
@@ -498,20 +501,20 @@ i <- i + 1
 
 ```{r savdebt_forecast_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 savdebt_forecast <- savdebt_fit %>%                # Using debt for Q4 2017 through Q2 2018
-  forecast(xreg = fred_debt[152:154], level = 95)  # to predict savings for Q1 2018 through Q3 2018
+  forecast(xreg = fred_debt[153:155], level = 95)  # to predict savings for Q1 2018 through Q3 2018
 
 savdebt_preds <- as.vector(savdebt_forecast$mean)
-predtime <- seq(from = 2018, to = 2018.5, by = 0.25)
+predtime <- seq(from = 2017.75, to = 2018.25, by = 0.25)
 savdebt_pred_df <- as.tibble(cbind(predtime, savdebt_preds))
 
-sav_train_vec <- as.vector(fred_savings_train)
-time <- seq(from = 1980, to = 2017.75, by = 0.25)
+sav_train_vec <- as.vector(fred_savings_train[1:dlen - 1])
+time <- seq(from = 1980, to = 2017.5, by = 0.25)
 sav_train_df <- as.tibble(cbind(time, sav_train_vec))
 
 savdebt_actual_df <- as.tibble(cbind(predtime, as.vector(tail(fred_savings, 3)))) %>% 
   rename(sav_actual = V1)
 
-sav_preds_kable <- as.tibble(cbind(c("Q1 2018", "Q2 2018", "Q3 2018"), 
+sav_preds_kable <- as.tibble(cbind(c("Q4 2017", "Q1 2018", "Q2 2018"), 
                                     savdebt_preds,
                                     as.vector(tail(fred_savings, 3)))) %>% 
   mutate(savdebt_preds = round(as.numeric(savdebt_preds), digits = 2)) %>% 
