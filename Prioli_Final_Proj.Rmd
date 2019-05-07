@@ -91,7 +91,7 @@ references:
   issued:
     year: 2016
   title: Consumer Price Index - Total All Items for the United States [CPALTT01USM661S]
-abstract: "**_Background_** Over the past decade, American household debt spending has increased while contributions to personal savings have decreased.  This analysis seeks to understand US household real per-capita disposable income, debt service payments, and personal savings over time, to understand trends in personal disposable income, and to determine whether savings can accurately be predicted from debt. **_Methods_** Seasonally adjusted quarterly data pertaining to disposable income, debt service payments as a percentage of disposable income, and savings as a percentage of personal income were obtained from the Federal Reserve Bank of St. Louis.  Data were restricted to the common time horizon of first quarter 1980 through third quarter 2018, and each time series (TS) was explored by plotting the TS along with its autocorrelation and partial autocorrelation functions.  A univariate ARIMA model was constructed for the disposable income data, and residuals were investigated for ARCH/GARCH behavior.  The relationship between savings and debt was explored via scatterplot, crosscorrelation function (CCF), and an ARIMA model.  For both models, forecasts were made and compared to known values, and percent error was calculated.  **_Results_** Disposable income exhibited a generally increasing trend over time and was modeled as ARIMA(1,1,0) with ARMA errors.  Forecast values showed good alignment with observed values, with percent error in predictions all below 1%.  Savings showed a general decrease as debt increased, and the CCF plot suggested that lag-1 debt could be predictive of savings.  Savings vs. lag-1 debt was modeled as ARIMA(1,1,0).  Predictions were adequte, with percent error ranging between 1.8% and 10.4% in magnitude, and observed values falling within 95% prediction interval.   **_Conclusion_** Modeling and forecasting performed well in the univariate case where a strong trend was observed, and performed acceptably in the bivariate case in which the TS data were more volatile and the CCF suggested weak cross-correlation between the two TS."
+abstract: "**_Background_** Over the past decade, American household debt spending has increased while contributions to personal savings have decreased.  This analysis seeks to understand US household real per-capita disposable income, debt service payments, and personal savings over time, to understand trends in personal disposable income, and to determine whether savings can accurately be predicted from debt. **_Methods_** Seasonally adjusted quarterly data pertaining to disposable income, debt service payments as a percentage of disposable income, and savings as a percentage of personal income were obtained from the Federal Reserve Bank of St. Louis.  Data were restricted to the common time horizon of first quarter 1980 through third quarter 2018, and each time series (TS) was explored by plotting the TS along with its autocorrelation and partial autocorrelation functions.  A univariate ARIMA model was constructed for the disposable income data, and residuals were investigated for ARCH/GARCH behavior.  The relationship between savings and debt was explored via scatterplot, crosscorrelation function (CCF), and an ARIMA model.  For both models, forecasts were made and compared to known values, and percent error was calculated.  **_Results_** Disposable income exhibited a generally increasing trend over time and was modeled as ARIMA(1,1,0) with ARMA errors.  Forecast values showed good alignment with observed values, with percent error in predictions all below 1%.  Savings showed a general decrease as debt increased, and the CCF plot suggested that lag-1 debt could be predictive of savings.  Savings vs. lag-1 debt was modeled as ARIMA(2,1,1).  Predictions were reasonably good, with percent error ranging between 1% and 7.5% in magnitude, and observed values falling within 95% prediction interval.   **_Conclusion_** Modeling and forecasting performed well in the univariate case where a strong trend was observed, and performed acceptably in the bivariate case in which the TS data were more volatile and the CCF suggested weak cross-correlation between the two TS."
 ---
 
 ```{r setup, include = FALSE, warning = FALSE, results = "hide", echo = FALSE, message = FALSE}
@@ -430,40 +430,7 @@ i <- i + 1
 
 ### *Modeling Savings vs. Debt*
 
-
-
-
-# CONTINUE HERE AND ADJUST EXPLANATION WORDING THROUGHOUT
-
-
-
-
-For predicting savings from lag-1 debt, the model suggested by `auto.arima()` was ARIMA(1,1,0).  Residual fit diagnostics are presented in Fig. 14.  The histogram of residuals is passably normal, although strong departure from normality is observed in the lower tail.  The ACF plot shows all values within the blue boundaries, the Ljung-Box test is not statistically significant, and no ARCH/GARCH behavior is seen (Fig. 15); thus the residuals are consistent with white noise.  However, when testing for predictor significance, lag-1 debt (`xreg` on output) is found not to be a significant predictor in the model.
-
-
-
-
-<!-- ```{r aarima_dsavddebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4} -->
-<!-- dsav_train <- diff(fred_savings_train) -->
-<!-- ddebt_train <- diff(fred_debt_train) -->
-
-<!-- ddlen <- length(ddebt_train) -->
-
-<!-- dsavdebt_ts <- as.tibble(cbind(ddebt_train[2:ddlen], -->
-<!--                                dsav_train[1:ddlen - 1])) %>%  -->
-<!--   rename(debt = V1, -->
-<!--          savings = V2) %>%  -->
-<!--   ts(start = 1980, frequency = 4) -->
-
-<!-- dsavdebt_fit <- auto.arima(dsavdebt_ts[, 2], -->
-<!--                            xreg = dsavdebt_ts[, 1], -->
-<!--                            max.P = 0, -->
-<!--                            max.Q = 0) -->
-<!-- dsavdebt_fit -->
-<!-- coeftest(dsavdebt_fit) -->
-<!-- checkresiduals(dsavdebt_fit, points = FALSE) -->
-<!-- ``` -->
-
+For predicting savings from lag-1 debt, the model suggested by `auto.arima()` was ARIMA(2,1,1) with drift.  Residual fit diagnostics are presented in Fig. 14.  The histogram of residuals shows reasonable normality with slight deviation from normality at the tails.  The ACF plot shows all values within the blue boundaries, the Ljung-Box test is not statistically significant, and ARCH/GARCH behavior is not seen (Fig. 15); thus the residuals are consistent with white noise.  All model terms are significant.
 
 ```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 dlen <- length(fred_savings_train)
@@ -495,7 +462,6 @@ savdebt_resids <- savdebt_fit$residuals
 savdebt_AG_sq <- ggAcf(savdebt_resids * savdebt_resids, lag.max = 50) + ylim(-1, 1) + ggtitle("Squared Residuals")
 savdebt_AG_abs <- ggAcf(abs(savdebt_resids), lag.max = 50) + ylim(-1, 1) + ggtitle("Absolute Value of Residuals")
 grid.arrange(savdebt_AG_sq, savdebt_AG_abs, nrow = 1)
-
 i <- i + 1
 ```
 
@@ -566,7 +532,7 @@ The major limitation to this analysis is that the data were obtained in seasonal
 
 ## **Conclusion**
 
-Modeling and forecasting performed very well in the univariate case where a strong trend was observed, and performed acceptably in the bivariate case.  Future work includes incorporating additional predictor(s) into the savings vs. debt model and applying smoothing techniques to reduce the impact of volatility.
+Modeling and forecasting performed very well in the univariate case where a strong trend was observed, and performed adequately in the bivariate case.  Future work includes incorporating additional predictor(s) into the savings vs. debt model and applying smoothing techniques to reduce the impact of volatility.
 
 
 
