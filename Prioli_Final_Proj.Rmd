@@ -440,22 +440,40 @@ For predicting savings from lag-1 debt, the model suggested by `auto.arima()` wa
 # CONTINUE HERE AND THINK ABOUT HOW TO EXPLAIN THIS
 
 
+```{r aarima_dsavddebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+dsav_train <- diff(fred_savings_train)
+ddebt_train <- diff(fred_debt_train)
 
+ddlen <- length(ddebt_train)
+
+dsavdebt_ts <- as.tibble(cbind(ddebt_train[2:ddlen],
+                               dsav_train[1:ddlen - 1])) %>% 
+  rename(debt = V1,
+         savings = V2) %>% 
+  ts(start = 1980, frequency = 4)
+
+dsavdebt_fit <- auto.arima(dsavdebt_ts[, 2],
+                           xreg = dsavdebt_ts[, 1],
+                           max.P = 0,
+                           max.Q = 0)
+dsavdebt_fit
+coeftest(dsavdebt_fit)
+checkresiduals(dsavdebt_fit, points = FALSE)
+```
 
 
 ```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 dlen <- length(fred_savings_train)
 
-savdebt_ts <- as.tibble(cbind(fred_debt_train[1:dlen - 1],
-                              fred_savings_train[2:dlen])) %>% 
+savdebt_ts <- as.tibble(cbind(fred_debt_train[2:dlen],
+                              fred_savings_train[1:dlen - 1])) %>% 
   rename(debt = V1,
          savings = V2) %>% 
   ts(start = 1980, frequency = 4)
 
 savdebt_fit <- auto.arima(savdebt_ts[, 2],
                           xreg = savdebt_ts[, 1],
-                          max.P = 0,               # Limiting to P = 0 and Q = 0
-                          max.Q = 0)               # because sma1 and sar1 coeffs are NSS on coeftest()
+                          max.Q = 0)              # Limiting to Q = 0 because sma1 coeff is NSS on coeftest()
 savdebt_fit
 coeftest(savdebt_fit)
 ```
