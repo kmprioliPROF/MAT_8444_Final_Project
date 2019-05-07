@@ -91,7 +91,7 @@ references:
   issued:
     year: 2016
   title: Consumer Price Index - Total All Items for the United States [CPALTT01USM661S]
-abstract: "BACKGROUND text METHODS text RESULTS text CONCLUSION text"
+abstract: "**_Background_** Over the past decade, American household debt spending has increased while contributions to personal savings have decreased.  This analysis seeks to understand US household real per-capita disposable income, debt service payments, and personal savings over time, to understand trends in personal disposable income, and to determine whether savings can accurately be predicted from debt. **_Methods_** Seasonally adjusted quarterly data pertaining to disposable income, debt service payments as a percentage of disposable income, and savings as a percentage of personal income were obtained from the Federal Reserve Bank of St. Louis.  Data were restricted to the common time horizon of first quarter 1980 through third quarter 2018, and each time series (TS) was explored by plotting the TS along with its autocorrelation and partial autocorrelation functions.  A univariate ARIMA model was constructed for the disposable income data, and residuals were investigated for ARCH/GARCH behavior.  The relationship between savings and debt was explored via scatterplot, crosscorrelation function (CCF), and an ARIMA model.  For both models, forecasts were made and compared to known values, and percent error was calculated.  **_Results_** Disposable income exhibited a generally increasing trend over time and was modeled as ARIMA(1,1,0) with ARMA errors.  Forecast values showed good alignment with observed values, with percent error in predictions all below 1%.  Savings showed a general decrease as debt increased, and the CCF plot suggested that lag-1 debt could be predictive of savings.  Savings vs. lag-1 debt was modeled as ARIMA(1,1,0).  Predictions were adequte, with percent error ranging between 1.8% and 10.4% in magnitude, and observed values falling within 95% prediction interval.   **_Conclusion_** Modeling and forecasting performed well in the univariate case where a strong trend was observed, and performed acceptably in the bivariate case in which the TS data were more volatile and the CCF suggested weak cross-correlation between the two TS."
 ---
 
 ```{r setup, include = FALSE, warning = FALSE, results = "hide", echo = FALSE, message = FALSE}
@@ -188,14 +188,13 @@ fred_savings_train <- read_csv("data/fred_savings.csv") %>%
   ts(start = 1980, frequency = 4)
 ```
 
-Figures 1-3 show the `ggtsdisplay()` output for the three time series.  A generally increasing trend is seen in the plot of disposable income (Fig. 1).  Because these data are adjusted for inflation to \$US 2012, this trend represents a true increase in disposable income, not inflation, and thus the time series is not stationary.  The ACF plot shows a slow linear decline in $\hat{\rho}(h)$ with increasing *h*, suggesting nonstationarity.  The graphs of debt payments and savings (Figs. 2 and 3 respectively) do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (which is expected, because the data are provided in seasonally adjusted form).  Additionally, the ACF plots for both debt payments and savings are suggestive of nonstationarity due to their slow decline, and thus required differencing to achieve stationarity.
+Figures 1-3 show the `ggtsdisplay()` output for the three time series.  A generally increasing trend is seen in the plot of disposable income, and the ACF plot shows a slow linear decline in $\hat{\rho}(h)$ with increasing *h*, both of which suggest nonstationarity.  The graphs of debt payments and savings (Figs. 2 and 3 respectively) do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (which is expected, because the data are provided in seasonally adjusted form).  Additionally, the ACF plots for both debt payments and savings are suggestive of nonstationarity due to their slow decline, and thus these TS required differencing to achieve stationarity.
 
 **Figure `r i`.  Real Disposable Personal Income Per Capita**
 
 ```{r f1_exploration_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 fred_disp_plot <- ggtsdisplay(fred_disposable, points = FALSE, lag.max = 50,
                               main = "")
-  #main = "Real Disposable Personal Income Per Capita")
 i <- i + 1
 ```
 
@@ -204,7 +203,6 @@ i <- i + 1
 ```{r f2_exploration_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 fred_debt_plot <- ggtsdisplay(fred_debt, points = FALSE, lag.max = 50,
                               main = "")
-  #main = "Household Debt Service Payments as a Percent of Disposable Personal Income")
 i <- i + 1
 ```
 
@@ -212,12 +210,11 @@ i <- i + 1
 
 ```{r f3_exploration_sav, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 fred_savings_plot <- ggtsdisplay(fred_savings, points = FALSE, lag.max = 50,
-                              #main = "")
   main = "Personal Savings as a Percent of Disposable Personal Income")
 i <- i + 1
 ```
 
-Figures 4-6 show the results of differencing.  After differencing, stationarity appears to be met for all three TS.  ELABORATE FURTHER?
+Figures 4-6 show the results of differencing.  After differencing, stationarity appears to be met for all three TS.  Figure 4 suggests that the disposable income data may be modeled as an AR(1) process.  The output in Figs. 5 and 6 is of limited value beyond confirming stationarity since these plots pertain to each time series individually and the aim is to model savings as dependent on debt.
 
 ```{r exploration_diffs, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 ddisp <- diff(fred_disposable)
@@ -230,7 +227,6 @@ dsavings <- diff(fred_savings)
 ```{r f4_exploration_ddisp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 fred_disp_plot <- ggtsdisplay(ddisp, points = FALSE, lag.max = 50,
                               main = "")
-  # main = "Real Disposable Personal Income Per Capita, Differenced Once")
 i <- i + 1
 ```
 
@@ -239,7 +235,6 @@ i <- i + 1
 ```{r f5_exploration_ddebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 fred_debt_plot <- ggtsdisplay(ddebt, points = FALSE, lag.max = 50,
                               main = "")
-  # main = "Household Debt Service Payments as a Percent of Disposable Personal Income, \nDifferenced Once")
 i <- i + 1
 ```
 
@@ -248,7 +243,6 @@ i <- i + 1
 ```{r f6_exploration_dsav, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 fred_savings_plot <- ggtsdisplay(dsavings, points = FALSE, lag.max = 50,
                               main = "")
-  # main = "Personal Savings as a Percent of Disposable Personal Income, Differenced Once")
 i <- i + 1
 ```
 
@@ -259,7 +253,6 @@ Classical decomposition of the debt and savings TS is shown in Figs. 7-8.  For b
 ```{r f7_decompos_debt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 fred_debt_decompose <- decompose(fred_debt) %>% 
   autoplot(main = "")
-    #main = "Debt Service Payments, Decomposition")
 fred_debt_decompose
 i <- i + 1
 ```
@@ -269,11 +262,9 @@ i <- i + 1
 ```{r f8_decompos_sav, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6}
 fred_savings_decompose <- decompose(fred_savings) %>% 
   autoplot(main = "")
-    #main = "Personal Savings, Decomposition")
 fred_savings_decompose
 i <- i + 1
 ```
-
 
 ```{r dsav_pgram_freqs, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 n <- length(dsavings)
@@ -355,7 +346,7 @@ aarima_disp <- auto.arima(fred_disposable_train)
 #aarima_disp
 ```
 
-For disposable income, the model suggested by `auto.arima()` was ARIMA $(1, 1, 0)$ with drift; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yielded a *p*-value of 0.3746 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates approximate normality of residuals with nontrivial deviation about the tails.  Both the AR(1) and drift parameters in the model are significant at the $\alpha = 0.05$ threshold.  Despite the suspected lack of normality in the residuals, this model fits the training dataset reasonably well.  Additionally, ARCH/GARCH behavior was not seen in the model residuals (Fig. 12).
+For disposable income, the model suggested by `auto.arima()` was ARIMA $(1, 1, 0)$ with drift; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yielded a *p*-value of 0.3746 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates approximate normality of residuals with nontrivial deviation about the tails.  Both the AR(1) and drift parameters in the model are significant at the $\alpha = 0.05$ threshold.  Despite the suspected lack of normality in the residuals, this model fits the training dataset reasonably well.  ARCH/GARCH behavior was not seen in the model residuals (Fig. 12), consistent with the `auto.arima()` fit, which indicated drift (i.e., ARMA errors).
 
 ```{r Arima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 disp_fit <- Arima(fred_disposable_train, order = c(1, 1, 0), include.drift = TRUE)
@@ -377,11 +368,8 @@ i <- i + 1
 disp_resids <- disp_fit$residuals
 disp_AG_sq <- ggAcf(disp_resids * disp_resids, lag.max = 50) + ylim(-1, 1) + ggtitle("Squared Residuals")
 disp_AG_abs <- ggAcf(abs(disp_resids), lag.max = 50) + ylim(-1, 1) + ggtitle("Absolute Value of Residuals")
+grid.arrange(disp_AG_sq, disp_AG_abs, nrow = 1)
 
-grid.arrange(disp_AG_sq, disp_AG_abs, nrow = 1) #,
-             # top = textGrob("Figure 11.  Autocorrelation Function for Residuals",
-             #                gp = gpar(fontsize = 14, fontface = "bold", col = "#34495E"),
-             #                x = 0.025, hjust = 0))
 i <- i + 1
 ```
 
@@ -434,8 +422,7 @@ disp_forecast_plot <- disp_fit %>%
   scale_y_continuous(labels = dollar_format(prefix = "$")) +
   guides(fill = FALSE) +
   xlab("Year") +
-  ylab("") #+
-  #ggtitle("Predicted vs. Actual Values, Disposable Income")
+  ylab("")
 disp_forecast_plot
 
 i <- i + 1
@@ -443,7 +430,18 @@ i <- i + 1
 
 ### *Modeling Savings vs. Debt*
 
-Text
+For predicting savings from lag-1 debt, the model suggested by `auto.arima()` was ARIMA(1,1,0).  Residual fit diagnostics are presented in Fig. 14.  The histogram of residuals is passably normal, although strong departure from normality is observed in the lower tail.  The ACF plot shows all values within the blue boundaries, the Ljung-Box test is not statistically significant, and no ARCH/GARCH behavior is seen (Fig. 15); thus the residuals are consistent with white noise.  However, when testing for predictor significance, lag-1 debt (`xreg` on output) is found not to be a significant predictor in the model.
+
+
+
+
+
+
+# CONTINUE HERE AND THINK ABOUT HOW TO EXPLAIN THIS
+
+
+
+
 
 ```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 dlen <- length(fred_savings_train)
@@ -464,12 +462,21 @@ coeftest(savdebt_fit)
 
 **Figure `r i`.  Residual Fit, Lagged Regression of Differenced Savings on Differenced Debt**
 
-```{r f14_forecast_disp_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+```{r f14_forecast_disp_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 checkresiduals(savdebt_fit, points = FALSE)
 i <- i + 1
 ```
 
-Text
+**Figure `r i`.  Autocorrelation Function for Residuals**
+
+```{r f15_savdebt_resids, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+savdebt_resids <- savdebt_fit$residuals
+savdebt_AG_sq <- ggAcf(savdebt_resids * savdebt_resids, lag.max = 50) + ylim(-1, 1) + ggtitle("Squared Residuals")
+savdebt_AG_abs <- ggAcf(abs(savdebt_resids), lag.max = 50) + ylim(-1, 1) + ggtitle("Absolute Value of Residuals")
+grid.arrange(savdebt_AG_sq, savdebt_AG_abs, nrow = 1)
+
+i <- i + 1
+```
 
 ```{r savdebt_forecast_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 savdebt_forecast <- savdebt_fit %>%                # Using debt for Q4 2017 through Q2 2018
@@ -510,7 +517,7 @@ savdebt_forecast_plot <- savdebt_fit %>%
   ggtitle("")
 ```
 
-Text
+Predicted vs. observed values for the savings vs. debt model are shown in Table 4.  Agreement is adequate, with percent error ranging between 1.75 and 10.42 in magnitude, and all observed values falling within the 95% prediction interval (Fig. 16).
 
 **Table 4.  Predicted and Observed Values, Savings, Q1 through Q3 2018**
 
@@ -520,27 +527,25 @@ sav_preds_kable
 
 **Figure `r i`.  Forecast Savings, Lagged Debt Model**
 
-```{r f15_savdebt_forecast_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
+```{r f16_savdebt_forecast_plot, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 savdebt_forecast_plot
 i <- i + 1
 ```
 
-Text
-
 
 ## **Discussion**
 
-Text
+The model for disposable personal income worked quite well, with forecast values very close to observed values.  This is not surprising because the disposable income data showed a strong trend without much volatility.  Conversely, the model for predicting savings from debt worked adequately but agreement between predicted and observed values was poorer than for the disposable income model.  This suggests that the savings vs. debt model may require an additional predictor - for example, quarterly nonessential or recreational spending.  Additionally, the savings and debt data are somewhat volatile, and predictions may be improved by applying smoothing to these data, especially when predicting at or near turning points in the data.
 
 
 ### *Limitations*
 
-Text
+The major limitation to this analysis is that the data were obtained in seasonally adjusted form.  This limits the ability to incorporate additional datapoints when they become available because the data are not static, and thus the models may change depending on the degree of adjustment in the data.  Further, seasonally adjusted data limits the usefulness of the frequency domain approach.  Although some seasonality was observed in each TS, in each case it was small in magnitude as compared to the scale of the raw data.  Frequencies noted on the scaled periodogram are not believed to have real-world meaning, and are suspected to represent random noise, particularly because the magnitudes of periodogram peaks were small.
 
 
 ## **Conclusion**
 
-Text
+Modeling and forecasting performed very well in the univariate case where a strong trend was observed, and performed acceptably in the bivariate case.  Future work includes incorporating additional predictor(s) into the savings vs. debt model and applying smoothing techniques to reduce the impact of volatility.
 
 
 
