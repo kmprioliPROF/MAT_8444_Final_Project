@@ -8,7 +8,7 @@ output: html_document
   
 ## **Purpose**
   
-This repo contains the data, full source code, final report, and slides for my MAT 8444 final project.  The objective of this project was to analyze US household debt service payments and personal savings as they relate to real per-capita disposable income over time.
+This repo contains the data, full source code, final report, and slides for my MAT 8444 final project.  The objective of this project was to analyze US household real per-capita disposable income, debt service payments, and personal savings over time, to understand trends in personal disposable income, and to determine whether savings can accurately be predicted from debt.
 
 
 ## **Contents**
@@ -18,7 +18,7 @@ The repo is organized as follows:
   | **Content**                             	| **Description**                            	|
   |-----------------------------------------	|--------------------------------------------	|
   | data                                      | Subdirectory containing source datasets     |
-  | Final_Project.Rproj                       | .Rproj project container                    |
+  | MAT_8444_Final_Project.Rproj              | .Rproj project container                    |
   | Prioli_Final_Proj.Rmd                     | Notebook containing source code and report  |
   | Prioli_Final_Proj.pdf                     | Knitted notebook                            |
   | Prioli_Final_Proj.pptx                    | Presentation slides                         |
