@@ -91,7 +91,7 @@ references:
   issued:
     year: 2016
   title: Consumer Price Index - Total All Items for the United States [CPALTT01USM661S]
-abstract: "**_Background_** Over the past decade, American household debt spending has increased while contributions to personal savings have decreased.  This analysis seeks to understand US household real per-capita disposable income, debt service payments, and personal savings over time, to understand trends in personal disposable income, and to determine whether savings can accurately be predicted from debt. **_Methods_** Seasonally adjusted quarterly data pertaining to disposable income, debt service payments as a percentage of disposable income, and savings as a percentage of personal income were obtained from the Federal Reserve Bank of St. Louis.  Data were restricted to the common time horizon of first quarter 1980 through third quarter 2018, and each time series (TS) was explored by plotting the TS along with its autocorrelation and partial autocorrelation functions.  A univariate ARIMA model was constructed for the disposable income data, and residuals were investigated for ARCH/GARCH behavior.  The relationship between savings and debt was explored via scatterplot, crosscorrelation function (CCF), and an ARIMA model.  For both models, forecasts were made and compared to known values, and percent error was calculated.  **_Results_** Disposable income exhibited a generally increasing trend over time and was modeled as ARIMA(1,1,0) with ARMA errors.  Forecast values showed good alignment with observed values, with percent error in predictions all below 1%.  Savings showed a general decrease as debt increased, and the CCF plot suggested that lag-1 debt could be predictive of savings.  Savings vs. lag-1 debt was modeled as ARIMA(2,1,1).  Predictions were reasonably good, with percent error ranging between 1% and 7.5% in magnitude, and observed values falling within 95% prediction interval.   **_Conclusion_** Modeling and forecasting performed well in the univariate case where a strong trend was observed, and performed acceptably in the bivariate case in which the TS data were more volatile and the CCF suggested weak cross-correlation between the two TS."
+abstract: "**_Background_** Over the past decade, American household debt spending has increased while contributions to personal savings have decreased.  This analysis seeks to understand trends in personal disposable income over time and to determine whether savings can accurately be predicted from debt. **_Methods_** Seasonally adjusted quarterly data pertaining to disposable income, debt service payments as a percentage of disposable income, and savings as a percentage of personal income were obtained from the Federal Reserve Bank of St. Louis.  Data were restricted to the common time horizon of first quarter 1980 through third quarter 2018, and each time series (TS) was explored by plotting the TS along with its autocorrelation and partial autocorrelation functions.  A univariate ARIMA model was constructed for the disposable income data, and residuals were investigated for ARCH/GARCH behavior.  The relationship between savings and debt was explored via scatterplot, crosscorrelation function (CCF), and an ARIMA model.  For both models, forecasts were made and compared to known values, and percent error was calculated.  **_Results_** Disposable income exhibited a generally increasing trend over time and was modeled as ARIMA(1,1,0) with ARMA errors.  Forecast values showed good agreement with observed values, with percent error in predictions all below 1%.  Savings showed a general decrease as debt increased, and the CCF plot suggested that lag-1 debt could be predictive of savings.  Savings vs. lag-1 debt was modeled as ARIMA(2,1,1).  Predictions were reasonably good, with percent error ranging between 1% and 7.5% in magnitude, and observed values falling within the 95% prediction interval.   **_Conclusion_** Modeling and forecasting performed well in the univariate case where a strong trend was observed, and performed reasonably well in the bivariate case in which the TS data were more volatile and the CCF suggested weak cross-correlation between the two TS."
 ---
 
 ```{r setup, include = FALSE, warning = FALSE, results = "hide", echo = FALSE, message = FALSE}
@@ -115,7 +115,7 @@ i <- 1                  # For figure numbering
 
 ## **Background**
 
-Americans are on average spending more and saving less over the past decade.  As of the fourth quarter 2018, total household debt in the United States has hit a ten-year high at \$869B (@nyfed_Q42018).  As debt increases, so does household spending, up from \$9.7M in 2008 to $12.9M in 2017 (@oecd_spending).  Total household savings is on the decline, decreasing from 9.1% in 2012 to 6.9% in 2017 (@oecd_savings).  Wages have increased modestly during this time, and appears largely attributable to inflation (@fred_CPI).
+Americans are on average spending more and saving less over the past decade.  As of the fourth quarter of 2018, total household debt in the United States has hit a ten-year high at \$869B (@nyfed_Q42018).  With increasing debt came increasing household spending, up from \$9.7M in 2008 to $12.9M in 2017 (@oecd_spending).  Meanwhile, total household savings is on the decline, decreasing from 9.1% in 2012 to 6.9% in 2017 (@oecd_savings).  Wages have only modestly increased during this time, and this increase appears largely attributable to inflation (@fred_CPI).
 
 The objective of this study was to analyze US household real per-capita disposable income, debt service payments, and personal savings over time, to understand trends in personal disposable income, and to determine whether savings can accurately be predicted from debt.
 
@@ -138,11 +138,11 @@ Each TS was separately explored via the `forecast::ggtsdisplay()` function, whic
 
 ### *Modeling Disposable Income*
 
-To model the disposable income data, the `fred_disposable` TS was subset to a "training" dataset capped at Q3 2017, and a suggested fit was obtained via `forecast::auto.arima()`.  The suggested model was fit using `forecast::Arima()`, and model fit was assesed both through analysis of residuals using `forecast::checkresiduals()` and by checking *p*-values via `lmtest::coeftest()`.  ACF plots of squared and absolute value residuals were assessed for ARCH/GARCH behavior.  Finally, `forecast::forecast()` was used to predict the next three values (i.e., Q1 2018 through Q3 2018) along with a confidence interval, and these predictions were compared to the values found in the full dataset.
+To model the disposable income data, the `fred_disposable` TS was subset to a "training" dataset capped at Q3 2017, and a suggested fit was obtained via `forecast::auto.arima()`.  The suggested model was fit using `forecast::Arima()`, and model fit was assesed both through residual diagnostics (histogram, ACF plot, and Ljung-Box test) using `forecast::checkresiduals()` and by testing for significance of model terms via `lmtest::coeftest()`.  ACF plots of squared and absolute value residuals were assessed for ARCH/GARCH behavior.  Finally, `forecast::forecast()` was used to predict the next three values (i.e., Q1 2018 through Q3 2018) along with a prediction interval, and these predictions were compared to the values found in the full dataset.
 
 ### *Modeling Savings vs. Debt*
 
-Since both debt service payments (`fred_debt`) personal savings (`fred_savings`) are expressed as a percentage of disposable personal income, it is reasonable to hypothesize that, as debt payments increase, personal savings may decrease.  Under this hypothesis and using the same set of functions as described above, debt was used to predict savings for Q1 2018 through Q3 2018 using training datasets capped at Q3 2017 in an ARIMA model that incorporates both differencing and a lag offset informed by the CCF of differenced savings vs. differenced debt.  Predictions were again compared to the observed values available in the full `fred_savings` dataset.
+Since both debt service payments (`fred_debt`) and personal savings (`fred_savings`) are expressed as a percentage of disposable personal income, it is reasonable to hypothesize that, as debt payments increase, personal savings may decrease.  Under this hypothesis and using the same set of functions as described above, debt was used to predict savings for Q3 2017 through Q2 2018 in an ARIMA model that incorporates both differencing and a lag offset informed by the CCF of differenced savings vs. differenced debt.  Predictions were again compared to the observed values available in the full `fred_savings` dataset.
 
 All analyses were performed in R (R v. 3.5.1, R Foundation for Statistical Computing, Vienna, Austria) using the `forecast` package (@pkg_forecast) for specialized time series calculations and plots.  All statistical tests were evaluated against a significance threshold of $\alpha = 0.05$.
 
@@ -188,7 +188,7 @@ fred_savings_train <- read_csv("data/fred_savings.csv") %>%
   ts(start = 1980, frequency = 4)
 ```
 
-Figures 1-3 show the `ggtsdisplay()` output for the three time series.  A generally increasing trend is seen in the plot of disposable income, and the ACF plot shows a slow linear decline in $\hat{\rho}(h)$ with increasing *h*, both of which suggest nonstationarity.  The graphs of debt payments and savings (Figs. 2 and 3 respectively) do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (which is expected, because the data are provided in seasonally adjusted form).  Additionally, the ACF plots for both debt payments and savings are suggestive of nonstationarity due to their slow decline, and thus these TS required differencing to achieve stationarity.
+Figures 1-3 show the `ggtsdisplay()` output for the three time series.  A generally increasing trend is seen in the plot of disposable income, and the ACF plot shows a slow decline in ACF with increasing lag, both of which suggest nonstationarity.  The graphs of debt payments and savings (Figs. 2 and 3 respectively) do not exhibit any simple trend, but do fluctuate over time, though without any apparent seasonality (which is expected, because the data are provided in seasonally adjusted form).  Additionally, the ACF plots for both debt payments and savings are suggestive of nonstationarity due to their slow decline, and thus these TS required differencing to achieve stationarity.
 
 **Figure `r i`.  Real Disposable Personal Income Per Capita**
 
@@ -210,11 +210,11 @@ i <- i + 1
 
 ```{r f3_exploration_sav, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 fred_savings_plot <- ggtsdisplay(fred_savings, points = FALSE, lag.max = 50,
-  main = "Personal Savings as a Percent of Disposable Personal Income")
+  main = "")
 i <- i + 1
 ```
 
-Figures 4-6 show the results of differencing.  After differencing, stationarity appears to be met for all three TS.  Figure 4 suggests that the disposable income data may be modeled as an AR(1) process.  The output in Figs. 5 and 6 is of limited value beyond confirming stationarity since these plots pertain to each time series individually and the aim is to model savings as dependent on debt.
+Figures 4-6 show the results of differencing.  After differencing, stationarity appears to be met for all three TS.  Figure 4 suggests that the differenced disposable income data may be modeled as an AR(1) process.  The output in Figs. 5 and 6 is of limited value beyond confirming stationarity since these plots pertain to each time series individually and the aim is to model savings as dependent on debt.
 
 ```{r exploration_diffs, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 ddisp <- diff(fred_disposable)
@@ -246,7 +246,7 @@ fred_savings_plot <- ggtsdisplay(dsavings, points = FALSE, lag.max = 50,
 i <- i + 1
 ```
 
-Classical decomposition of the debt and savings TS is shown in Figs. 7-8.  For both TS, the seasonal component was small in magnitude when compared to the raw TS, with personal savings having the more pronounced seasonal component.
+Classical decompositions of the debt and savings TS are shown in Figs. 7-8.  For both TS, the seasonal component was small in magnitude when compared to the raw TS, with personal savings having the more pronounced seasonal component.
 
 **Figure `r i`.  Debt Service Payments, Decomposition**
 
@@ -299,7 +299,7 @@ pgram_dsav_peaks <- pgram_dsav_df %>%
   mutate(Frequency = round(Frequency, digits = 3))
 ```
 
-The scaled periodogram for differenced savings is presented in Figure 9.  All peak values in this plot are quite small.  Five peaks are seen; key frequencies observed are $\omega_{1}$ = `r pgram_dsav_peaks[[1, 1]]`, $\omega_{2}$ = `r pgram_dsav_peaks[[2, 1]]`, and $\omega_{3}$ = `r pgram_dsav_peaks[[4, 1]]`, with some possible clustering about $\omega_{3}$, indicating it is not a fundamenal frequency.  Because these data are already seasonally adjusted, none of these frequencies are expected to have real meaning; additionally, all peaks observed are of small magnitude, consistent with a weak seasonal component, and thus limiting the usefulness of the frequency domain approach.
+The scaled periodogram for differenced savings is presented in Figure 9.  All peak values in this plot are quite small.  Five peaks are seen; key frequencies observed are $\omega_{1}$ = `r pgram_dsav_peaks[[1, 1]]`, $\omega_{2}$ = `r pgram_dsav_peaks[[2, 1]]`, and $\omega_{3}$ = `r pgram_dsav_peaks[[4, 1]]`, with some possible clustering about $\omega_{3}$, indicating it is not a fundamenal frequency.  Because these data are already seasonally adjusted, none of these frequencies are expected to have real meaning; additionally, all peaks observed are of small magnitude, consistent with a trivial seasonal component, and thus limiting the usefulness of the frequency domain approach.
 
 **Figure `r i`.  Scaled Periodogram for Differenced Savings**
 
@@ -346,7 +346,7 @@ aarima_disp <- auto.arima(fred_disposable_train)
 #aarima_disp
 ```
 
-For disposable income, the model suggested by `auto.arima()` was ARIMA $(1, 1, 0)$ with drift; `checkresiduals()` output for the fitted model is shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yielded a *p*-value of 0.3746 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates approximate normality of residuals with nontrivial deviation about the tails.  Both the AR(1) and drift parameters in the model are significant at the $\alpha = 0.05$ threshold.  Despite the suspected lack of normality in the residuals, this model fits the training dataset reasonably well.  ARCH/GARCH behavior was not seen in the model residuals (Fig. 12), consistent with the `auto.arima()` fit, which indicated drift (i.e., ARMA errors).
+For disposable income, the model suggested by `auto.arima()` was ARIMA $(1, 1, 0)$ with drift; residual diagnostics for the fitted model are shown in Fig. 11.  The Ljung-Box test (not shown in Fig. 11) yielded a *p*-value of 0.3746 over 8 lags, indicating that the residuals are consistent with white noise.  This conclusion is supported by the plots in Fig. 11 - namely, the ACF plot looks like white noise, and the histogram demonstrates approximate normality of residuals with nontrivial deviation about the tails.  Both the AR(1) and drift parameters in the model are significant at the $\alpha = 0.05$ threshold.  Despite the suspected lack of normality in the residuals, this model fits the training dataset reasonably well.  ARCH/GARCH behavior was not seen in the model residuals (Fig. 12), consistent with the `auto.arima()` fit, which indicated drift (i.e., ARMA errors).
 
 ```{r Arima_disp, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 5}
 disp_fit <- Arima(fred_disposable_train, order = c(1, 1, 0), include.drift = TRUE)
@@ -402,7 +402,7 @@ disp_preds_kable <- as.tibble(cbind(c("Q1 2018", "Q2 2018", "Q3 2018"),
   kable(format = "markdown")
 ```
 
-Predicted and observed disposable income values for Q1 through Q3 2018 are shown in Table 3.  The observed values are marginally greater than predicted values in each case, and fall within the 95% prediction interval (Fig. 13).
+Predicted and observed disposable income values for Q1 through Q3 2018 are shown in Table 3.  Agreement between predicted and observed values is excellent in each case, with observed values marginally higher than predictions, and percent error less than 1% in magnitude in each case.  All observed values fall within the 95% prediction interval (Fig. 13).
 
 **Table 3.  Predicted and Observed Values, Disposable Income, Q1 through Q3 2018**
 
@@ -430,7 +430,7 @@ i <- i + 1
 
 ### *Modeling Savings vs. Debt*
 
-For predicting savings from lag-1 debt, the model suggested by `auto.arima()` was ARIMA(2,1,1) with drift.  Residual fit diagnostics are presented in Fig. 14.  The histogram of residuals shows reasonable normality with slight deviation from normality at the tails.  The ACF plot shows all values within the blue boundaries, the Ljung-Box test is not statistically significant, and ARCH/GARCH behavior is not seen (Fig. 15); thus the residuals are consistent with white noise.  All model terms are significant.
+For predicting savings from lag-1 debt, the model suggested by `auto.arima()` was ARIMA(2,1,1) with drift.  Residual fit diagnostics are presented in Fig.\ 14.  The histogram of residuals appears reasonably normal but shows some evidence of nonnormality at the tails.  The ACF plot shows all values within the blue boundaries, the Ljung-Box test is not statistically significant, and ARCH/GARCH behavior is not seen (Fig. 15); thus the residuals are consistent with white noise.  All model terms are significant.
 
 ```{r aarima_savdebt, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 4}
 dlen <- length(fred_savings_train)
@@ -504,7 +504,7 @@ savdebt_forecast_plot <- savdebt_fit %>%
   ggtitle("")
 ```
 
-Predicted vs. observed values for the savings vs. debt model are shown in Table 4.  Agreement is adequate, with percent error ranging between 1.75 and 10.42 in magnitude, and all observed values falling within the 95% prediction interval (Fig. 16).
+Predicted vs. observed values for the savings vs. debt model are shown in Table 4.  Agreement is acceptably good, with percent error ranging between 1.75 and 10.42 in magnitude, and all observed values falling within the 95% prediction interval (Fig. 16).
 
 **Table 4.  Predicted and Observed Values, Savings, Q1 through Q3 2018**
 
@@ -527,12 +527,12 @@ The model for disposable personal income worked quite well, with forecast values
 
 ### *Limitations*
 
-The major limitation to this analysis is that the data were obtained in seasonally adjusted form.  This limits the ability to incorporate additional datapoints when they become available because the data are not static, and thus the models may change depending on the degree of adjustment in the data.  Further, seasonally adjusted data limits the usefulness of the frequency domain approach.  Although some seasonality was observed in each TS, in each case it was small in magnitude as compared to the scale of the raw data.  Frequencies noted on the scaled periodogram are not believed to have real-world meaning, and are suspected to represent random noise, particularly because the magnitudes of periodogram peaks were small.
+The major limitation to this analysis is that the data were obtained in seasonally adjusted form.  This hampers the ability to incorporate additional datapoints when they become available because the data are not static, and thus the models may change depending on the degree of adjustment in the data.  Further, seasonally adjusted data limits the usefulness of the frequency domain approach.  Although some seasonality was observed in each TS, in each case it was small in magnitude as compared to the scale of the raw data.  Frequencies noted on the scaled periodogram are not believed to have real-world meaning, and are suspected to represent random noise, particularly because the magnitudes of periodogram peaks were small.
 
 
 ## **Conclusion**
 
-Modeling and forecasting performed very well in the univariate case where a strong trend was observed, and performed adequately in the bivariate case.  Future work includes incorporating additional predictor(s) into the savings vs. debt model and applying smoothing techniques to reduce the impact of volatility.
+Modeling and forecasting performed very well in the univariate case where a strong trend was observed, and performed acceptably well in the bivariate case.  Future work includes incorporating additional predictor(s) into the savings vs. debt model and applying smoothing techniques to reduce the impact of volatility.
 
 
 
